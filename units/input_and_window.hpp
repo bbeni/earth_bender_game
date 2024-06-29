@@ -1,12 +1,7 @@
-/*
-alt, win, ctrl, shift  -> states
-mouse_x, mouse_y       -> states
-key_down_states        -> bool table
-key_flags              -> flags table
-mouse_flags            -> flags
-*/
 #ifndef INPUT_AND_WINDOW_H
 #define INPUT_AND_WINDOW_H
+
+#include "mathematics.hpp"
 
 #include "Windows.h"
 
@@ -81,6 +76,13 @@ extern bool initted;
 extern std::map<uint32_t, bool>            key_down_table;
 extern std::map<uint32_t, Key_State_Flags> key_flags_table;
 
+// time functions
+
+double get_time();       // the time since the firt call to this function
+double get_frame_time(); // this gets calculated in update_windows_events()
+float  get_fps();
+
+
 // functions to handle events...
 
 void events_reset();
@@ -92,7 +94,7 @@ void event_add(Event event);
 HWND create_window(int width, int height);
 void destroy_window(HWND hwnd);
 typedef struct Window_Info_For_Restore;
-void toggle_fullscreen(HWND hwnd, bool want_fullscreen, Window_Info_For_Restore* info);
+Vec2 toggle_fullscreen(HWND hwnd, bool want_fullscreen, Window_Info_For_Restore* info);
 
 // internal
 

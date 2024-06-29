@@ -127,11 +127,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="game.cpp" />
     <ClCompile Include="input_and_window.cpp" />
+    <ClCompile Include="mathematics.cpp" />
+    <ClCompile Include="rendering_backend.cpp" />
     <ClCompile Include="units.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="game.hpp" />
     <ClInclude Include="input_and_window.hpp" />
+    <ClInclude Include="mathematics.hpp" />
+    <ClInclude Include="rendering_backend.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

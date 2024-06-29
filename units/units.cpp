@@ -1,14 +1,30 @@
 #include "input_and_window.hpp"
+#include "rendering_backend.hpp"
+#include "game.hpp"
 
+#include <time.h>
 
 int main() {
 
+    int width = 1080;
+    int height = 720;
+
     HWND hwnd = create_window(1080, 720);
+    Window_Info window_info = { 0 };
+    window_info.window_handle = hwnd;
+
+    Window_Info_For_Restore saved_window = { 0 };
+
+    backend_init(&window_info);
 
     bool quit = false;
     bool fullscreen = false;
 
-    Window_Info_For_Restore saved_window;
+    Floor floor = {0};
+    generate_floor(&floor);
+
+    Vec4 color = { 1.0, 0.5, 0.0, 1.0 };
+
 
     while (!quit) {
         update_window_events();
@@ -26,35 +42,47 @@ int main() {
                 }
 
                 if (event.key_code == Key_Code::LEFT_BTN) {
-                    quit = true;
+                    color.x = (float)rand() / RAND_MAX;
+                    color.y = (float)rand() / RAND_MAX;
+                    color.z = (float)rand() / RAND_MAX;
                 }
 
                 if (event.key_code == Key_Code::F && (event.modifiers & CTRL)) {
                     fullscreen = !fullscreen;
-                    toggle_fullscreen(hwnd, fullscreen, &saved_window);
+                    Vec2 new_size = toggle_fullscreen(hwnd, fullscreen, &saved_window);
+                    width = new_size.x;
+                    height = new_size.y;
+                    adjust_viewport_size(width, height);
                 }
             }
-
         }
 
         events_reset();
 
-        //printf("ctrl:%d shift:%d alt:%d meta:%d \n", ctrl_state, shift_state, alt_state, meta_state);
+        float r = sinf(get_time() * 3.0f) * 0.5f + 0.5f;
+        float g = sinf(get_time() * 4.3f) * 0.5f + 0.5f;
 
-        Sleep(10);
+
+        clamp(&r, 0, 1);
+
+        clear_it(r, 0.2f, g, 1.0f);
+
+        immediate_quad();
+
+        draw_floor(&floor);
+
+        Vec2 pos = { (float)2*mouse_x/width - 1.0, -(float)2*mouse_y/height + 1.0 };
+        Vec2 size = { 0.3, 0.45 };
+
+        immediate_quad(pos, size, color);
+        
+        swap_buffers(&window_info);
+
+        //printf("ctrl:%d shift:%d alt:%d meta:%d \n", ctrl_state, shift_state, alt_state, meta_state);
+        printf("get_time() %f frame_time %f FPS %.2f \n", get_time(), get_frame_time(), get_fps());
+
     }
 
     destroy_window(hwnd);
 }
 
-
-// Run program: Ctrl + F5 or Debug > Start Without Debugging menu
-// Debug program: F5 or Debug > Start Debugging menu
-
-// Tips for Getting Started: 
-//   1. Use the Solution Explorer window to add/manage files
-//   2. Use the Team Explorer window to connect to source control
-//   3. Use the Output window to see build output and other messages
-//   4. Use the Error List window to view errors
-//   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
-//   6. In the future, to open this project again, go to File > Open > Project and select the .sln file
