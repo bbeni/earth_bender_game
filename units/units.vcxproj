@@ -135,12 +135,12 @@
     <ClCompile Include="units.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="data_stuff.h" />
     <ClInclude Include="game.hpp" />
     <ClInclude Include="glad\glad.h" />
     <ClInclude Include="glad\khrplatform.h" />
     <ClInclude Include="input_and_window.hpp" />
     <ClInclude Include="mathematics.hpp" />
-    <ClInclude Include="my_wgl_bindings.h" />
     <ClInclude Include="rendering_backend.hpp" />
     <ClInclude Include="shaders.hpp" />
   </ItemGroup>

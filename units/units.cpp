@@ -22,6 +22,9 @@ int main() {
 
     Vec4 color = { 1.0, 0.5, 0.0, 1.0 };
 
+    construct_cube();
+    printf("Vertices in model_cube %d\n", model_cube.mesh.count);
+
 
     while (!quit) {
         update_window_events();

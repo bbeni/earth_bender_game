@@ -75,9 +75,11 @@ Shader shader_color;
 // 0 is vertexshader, 1 is fragmentshader
 const char* shader_color_text[2] = {
 	"#version 330 core\n"
+	"\n"
 	"out vec4 iterated_color;\n"
 	"layout(location = 0) in vec2 vert_position;\n"
 	"layout(location = 1) in vec4 vert_color;\n"
+	"\n"
 	"uniform mat4 projection;\n"
 	"\n"
 	"void main() {\n"
@@ -90,8 +92,8 @@ const char* shader_color_text[2] = {
 
 	"#version 330 core\n"
 	"\n"
-	"in vec4 iterated_color;\n"
 	"out vec4 color;\n"
+	"in vec4 iterated_color;\n"
 	"\n"
 	"void main() {\n"
 	"	color = iterated_color;\n"

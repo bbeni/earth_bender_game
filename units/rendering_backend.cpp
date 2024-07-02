@@ -9,10 +9,6 @@
 #include <stdio.h>
 #include <iostream>
 
-// We use glad now
-//#define MY_WGL_BINDINGS_IMPLEMENTATION
-//#include "my_wgl_bindings.h"
-
 #pragma comment(lib, "opengl32.lib")
 
 #define GL_GLEXT_PROTOTYPES 1
@@ -46,8 +42,6 @@ wglChoosePixelFormatARB_type* wglChoosePixelFormatARB;
 #define WGL_FULL_ACCELERATION_ARB                 0x2027
 #define WGL_TYPE_RGBA_ARB                         0x202B
 
-
-void check_gl_error_and_fail(const char* message);
 
 void setup_pixel_format(HDC hdc) {
 	PIXELFORMATDESCRIPTOR pfd = {
@@ -222,8 +216,11 @@ void destroy_gl_context(Window_Info* info) {
 	wglDeleteContext(info->gl_context);
 }
 
+
+// immediate rendering stuff
+
 GLuint immediate_vbo;
-GLuint opengl_is_stupid_vao;
+GLuint immediate_vao;
 
 
 typedef struct Immediate_Vert {
@@ -245,7 +242,7 @@ void immediate_vertex(Vec2 position, Vec4 color) {
 	immediate_vertex_count++;
 }
 
-void immediate_shader_attributes_do(Shader *shader) {
+void immediate_shader_set_attributes(Shader *shader) {
 
 	GLsizei stride = sizeof(Immediate_Vert);
 
@@ -281,12 +278,12 @@ void immediate_send() {
 	//glDisable(GL_DEPTH_TEST);
 	//glDisable(GL_CULL_FACE);
 
-	glBindVertexArray(opengl_is_stupid_vao);
+	glBindVertexArray(immediate_vao);
 
 	glBindBuffer(GL_ARRAY_BUFFER, immediate_vbo);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(Immediate_Vert) * immediate_vertex_count, immediate_vertices, GL_DYNAMIC_DRAW);
 
-	immediate_shader_attributes_do(current_shader);
+	immediate_shader_set_attributes(current_shader);
 
 	glDrawArrays(GL_TRIANGLES, 0, immediate_vertex_count);
 
@@ -342,6 +339,71 @@ void immediate_quad(Vec2 pos, Vec2 size, Vec4 color) {
 	immediate_quad(p1, p2, p3, p4, color);
 }
 
+// 3d rendering stuff
+
+Static_Model model_cube;
+
+void construct_cube() {
+
+	model_cube = { 0 };
+
+	Vertex_Info v = { 0 };
+
+	// left right
+	for (float i = -1; i < 2; i += 2) {
+
+		Vertex_Info v1 = { 0.5 * i, -0.5, -0.5 };
+		Vertex_Info v2 = { 0.5 * i,  0.5, -0.5 };
+		Vertex_Info v3 = { 0.5 * i,  0.5,  0.5 };
+		Vertex_Info v4 = { 0.5 * i, -0.5,  0.5 };
+
+		d_append(&model_cube.mesh, v1);
+		d_append(&model_cube.mesh, v2);
+		d_append(&model_cube.mesh, v4);
+		d_append(&model_cube.mesh, v4);
+		d_append(&model_cube.mesh, v2);
+		d_append(&model_cube.mesh, v3);
+
+	}
+
+	// front back
+	for (float i = -1; i < 2; i += 2) {
+
+		Vertex_Info v1 = { -0.5, 0.5 * i, -0.5 };
+		Vertex_Info v2 = {  0.5, 0.5 * i, -0.5 };
+		Vertex_Info v3 = {  0.5, 0.5 * i,  0.5 };
+		Vertex_Info v4 = { -0.5, 0.5 * i,  0.5 };
+
+		d_append(&model_cube.mesh, v1);
+		d_append(&model_cube.mesh, v2);
+		d_append(&model_cube.mesh, v4);
+		d_append(&model_cube.mesh, v4);
+		d_append(&model_cube.mesh, v2);
+		d_append(&model_cube.mesh, v3);
+
+	}
+
+	// top bottom
+	for (float i = -1; i < 2; i += 2) {
+
+		Vertex_Info v1 = { -0.5, -0.5, 0.5 * i};
+		Vertex_Info v2 = {  0.5, -0.5, 0.5 * i};
+		Vertex_Info v3 = {  0.5,  0.5, 0.5 * i};
+		Vertex_Info v4 = { -0.5,  0.5, 0.5 * i};
+
+		d_append(&model_cube.mesh, v1);
+		d_append(&model_cube.mesh, v2);
+		d_append(&model_cube.mesh, v4);
+		d_append(&model_cube.mesh, v4);
+		d_append(&model_cube.mesh, v2);
+		d_append(&model_cube.mesh, v3);
+
+	}
+}
+
+
+
+// general rendering stuff
 
 void clear_it(float r, float g, float b, float a) {
 	glClearColor(r, g, b, a);
@@ -378,41 +440,11 @@ void backend_init(Window_Info* info) {
 		//load_wgl_functions();
 		gladLoadGL();
 	
-		glGenVertexArrays(1, &opengl_is_stupid_vao);
-		glBindVertexArray(opengl_is_stupid_vao);
+		glGenVertexArrays(1, &immediate_vao);
+		glBindVertexArray(immediate_vao);
 		glGenBuffers(1, &immediate_vbo);
 
 		check_gl_error_and_fail("in backend_init()");
-
-		//glBindVertexArray(opengl_is_stupid_vao);
-		//glBindBuffer(GL_ARRAY_BUFFER, immediate_vbo);
-		
-		//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-		//float p1p2p4[] = { -0.5f, -0.5f, 0.0f, 0.5f, -0.5f, 0.0f, 0.5f, 0.5f, 0.0f };
-
-		//glBufferData(GL_ARRAY_BUFFER, sizeof(p1p2p4[0]) * 9, p1p2p4, GL_DYNAMIC_DRAW);
-		//glEnableVertexAttribArray(0);
-		//glVertexAttribIPointer(0, 3, GL_FLOAT, 0, 0);
-		//glDrawArrays(GL_TRIANGLES, 0, 3);
-
-
-		// At initialization time:
-		//GLuint vao = 0;
-		//glGenVertexArrays(1, &vao);
-		//glBindVertexArray(vao);
-		// Set up your vertex attribute state:
-		//  - glBindBuffer(GL_ARRAY_BUFFER,...);
-		//  - glEnableVertexAttribArray(...);
-		//  - glVertexAttribPointer(...);
-		//  - etc. -- Refer to OpenGL docs to see what is/isn't included in the VAO!
-		//glBindVertexArray(0); // unbinds vao
-
-		// At draw time:
-		//glBindVertexArray(vao); // automatically sets up previously-bound vertex attribute state
-		//glDrawArrays(...);
-		//glBindVertexArray(0); // unbinds vao
-
 
 		backend_create_shaders();
 
