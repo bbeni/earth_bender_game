@@ -3,14 +3,7 @@
 #include "Windows.h"
 
 #include "mathematics.hpp"
-
-
-typedef struct Window_Info {
-	HWND window_handle;
-	HDC hdc;
-	HGLRC gl_context;
-
-} Window_Info;
+#include "input_and_window.hpp"
 
 void create_gl_context(Window_Info* info, int major_version, int minor_version);
 void destroy_gl_context(Window_Info* info);
@@ -20,6 +13,8 @@ void swap_buffers(Window_Info* info);
 void adjust_viewport_size(int width, int height);
 
 void immediate_triangle();
-void immediate_quad();
-void immediate_quad(Vec3 p1, Vec3 p2, Vec3 p3, Vec3 p4, Vec4 color);
+void immediate_quad(Vec2 p1, Vec2 p2, Vec2 p3, Vec2 p4, Vec4 color);
+void immediate_quad(Vec2 p1, Vec2 p2, Vec2 p3, Vec2 p4, Vec4 c1, Vec4 c2, Vec4 c3, Vec4 c4);
 void immediate_quad(Vec2 pos, Vec2 size, Vec4 color);
+
+void immediate_send();

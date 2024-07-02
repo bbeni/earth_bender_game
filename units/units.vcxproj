@@ -128,6 +128,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="game.cpp" />
+    <ClCompile Include="glad\glad.c" />
     <ClCompile Include="input_and_window.cpp" />
     <ClCompile Include="mathematics.cpp" />
     <ClCompile Include="rendering_backend.cpp" />
@@ -135,9 +136,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="game.hpp" />
+    <ClInclude Include="glad\glad.h" />
+    <ClInclude Include="glad\khrplatform.h" />
     <ClInclude Include="input_and_window.hpp" />
     <ClInclude Include="mathematics.hpp" />
+    <ClInclude Include="my_wgl_bindings.h" />
     <ClInclude Include="rendering_backend.hpp" />
+    <ClInclude Include="shaders.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

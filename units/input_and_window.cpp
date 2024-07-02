@@ -26,7 +26,7 @@ std::map<uint32_t, Key_State_Flags> key_flags_table;
 
 bool have_window_class = FALSE;
 
-HWND create_window(int width, int height) {
+Window_Info create_window(int width, int height) {
 
     const wchar_t* window_class_name = L"WhatAWindowClass";
 
@@ -85,18 +85,21 @@ HWND create_window(int width, int height) {
 
     if (hwnd == NULL) {
         printf("Error: CreateWindowExW failed with return value 0.\n");
-        return NULL;
+        Window_Info window_info = { 0 };
+        return window_info;
     }
 
     UpdateWindow(hwnd);
     ShowWindow(hwnd, SW_SHOW);
 
-    return hwnd;
+    Window_Info window_info = { 0 };
+    window_info.window_handle = hwnd;
+    return window_info;
 }
 
-void destroy_window(HWND hwnd) {
+void destroy_window(HWND window_handle) {
     PostQuitMessage(0);
-    DestroyWindow(hwnd);
+    DestroyWindow(window_handle);
 }
 
 // returns the new size of the window
@@ -146,7 +149,7 @@ Vec2 toggle_fullscreen(HWND hwnd, bool want_fullscreen, Window_Info_For_Restore*
         SetWindowPos(hwnd, HWND_TOP, x, y, width, height, SWP_FRAMECHANGED);
     }
 
-    Vec2 window_size = { width, height };
+    Vec2 window_size = { (float)width, (float)height };
     return window_size;
 }
 

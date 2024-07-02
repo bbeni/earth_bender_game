@@ -58,7 +58,31 @@ void draw_floor(Floor* floor) {
 	for (int i = 0; i < FLOOR_W; i++) {
 		for (int j = 0; j < FLOOR_D; j++) {
 			Vec2 pos = { (float)i / 10 - 1.0f + size.x, (float)j / 10 - 1.0f + size.y};
-			immediate_quad(pos, size, color_from_tile_type(floor->tiles[i][j].type));
+			//immediate_quad(pos, size, color_from_tile_type(floor->tiles[i][j].type));
+
+			Vec4 c1 = color_from_tile_type(floor->tiles[i][j].type);
+			Vec4 c2 = c1;
+			c2.x -= 0.4f;
+			c2.y -= 0.4f;
+			c2.z -= 0.4f;
+			clamp(&c2.x, 0, 1);
+			clamp(&c2.y, 0, 1);
+			clamp(&c2.z, 0, 1);
+
+			Vec4 c3 = c2;
+			c3.x += 0.3f;
+			c3.y += 0.3f;
+			c3.z += 0.3f;
+			clamp(&c3.x, 0, 1);
+			clamp(&c3.y, 0, 1);
+			clamp(&c3.z, 0, 1);
+
+			Vec2 p1 = { pos.x - size.x, pos.y - size.y };
+			Vec2 p2 = { pos.x + size.x, pos.y - size.y };
+			Vec2 p3 = { pos.x + size.x, pos.y + size.y };
+			Vec2 p4 = { pos.x - size.x, pos.y + size.y };
+
+			immediate_quad(p1, p2, p3, p4, c1, c1, c2, c3);
 
 		}
 	}

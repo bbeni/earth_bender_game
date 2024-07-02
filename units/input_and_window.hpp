@@ -91,7 +91,14 @@ void event_add(Event event);
 
 // window functions
 
-HWND create_window(int width, int height);
+typedef struct Window_Info {
+	HWND window_handle;
+	HDC hdc;
+	HGLRC gl_context;
+
+} Window_Info;
+
+Window_Info create_window(int width, int height);
 void destroy_window(HWND hwnd);
 typedef struct Window_Info_For_Restore;
 Vec2 toggle_fullscreen(HWND hwnd, bool want_fullscreen, Window_Info_For_Restore* info);
