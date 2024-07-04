@@ -31,41 +31,35 @@ int main() {
     draw_floor(&floor);
 
     Player player = { 0 };
-    player.direction = { 1.0f, 0, 1.0f };
     
     player.turn_speed = 1.0f;
     player.walk_speed = 10.0f;
 
-
     while (!quit) {
+
         update_window_events();
 
         player.current_action = Action::IDLE;
-        if (get_key_flags_state(VK_UP) & Key_State_Flags::DOWN) {
-            player.current_action = Action::WALK_FORWARDS;
-        }
-        if (get_key_flags_state(VK_DOWN) & Key_State_Flags::DOWN) {
-            player.current_action = Action::WALK_BACKWARDS;
-        }
-        if (get_key_flags_state(VK_RIGHT) & Key_State_Flags::DOWN) {
-            player.current_action = Action::WALK_RIGHT;
-        }
-        if (get_key_flags_state(VK_LEFT) & Key_State_Flags::DOWN) {
-            player.current_action = Action::WALK_LEFT;
-        }
 
-        // temporary
-        if (get_key_flags_state((uint32_t)Key_Code::W) & Key_State_Flags::DOWN) {
-            player.current_action = Action::WALK_FORWARDS;
+        player.direction = { 0.0f, 0.0f, 0.0f };
+
+        if ((get_key_flags_state(VK_UP) | get_key_flags_state((uint32_t)Key_Code::W)) & Key_State_Flags::DOWN ) {
+            player.current_action = Action::WALKING;
+            player.direction = player.direction + Vec3{ 0.0f, 0.0f, 1.0f };
         }
-        if (get_key_flags_state((uint32_t)Key_Code::S) & Key_State_Flags::DOWN) {
-            player.current_action = Action::WALK_BACKWARDS;
+        if ((get_key_flags_state(VK_DOWN) | get_key_flags_state((uint32_t)Key_Code::S)) & Key_State_Flags::DOWN) {
+            player.current_action = Action::WALKING;
+            player.direction = player.direction + Vec3{ 0.0f, 0.0f, -1.0f };
+
         }
-        if (get_key_flags_state((uint32_t)Key_Code::D) & Key_State_Flags::DOWN) {
-            player.current_action = Action::WALK_RIGHT;
+        if ((get_key_flags_state(VK_RIGHT) | get_key_flags_state((uint32_t)Key_Code::D)) & Key_State_Flags::DOWN) {
+            player.current_action = Action::WALKING;
+            player.direction = player.direction + Vec3{ 1.0f, 0.0f, 0.0f };
+
         }
-        if (get_key_flags_state((uint32_t)Key_Code::A) & Key_State_Flags::DOWN) {
-            player.current_action = Action::WALK_LEFT;
+        if ((get_key_flags_state(VK_LEFT) | get_key_flags_state((uint32_t)Key_Code::A)) & Key_State_Flags::DOWN) {
+            player.current_action = Action::WALKING;
+            player.direction = player.direction + Vec3{ -1.0f, 0.0f, 0.0f };
         }
 
 
@@ -106,14 +100,16 @@ int main() {
 
         clamp(&r, 0.0f, 1.0f);
 
-        clear_it(r, 0.2f, g, 1.0f);
-        //clear_it(0.4f, 0.4f, 0.35f, 1.0f);
+        //clear_it(r, 0.2f, g, 1.0f);
+        clear_it(0.55f, 0.6f, 0.85f, 1.0f);
 
-        update_player(&player);
+        update_player(&player, &floor);
 
         draw_map_floor(&floor, &player);
 
         //update_phong(get_time());
+        draw_player(&player);
+
 
         draw_floor(&floor);
 

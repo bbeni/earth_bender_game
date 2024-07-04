@@ -13,6 +13,19 @@ void clamp(float* v, float lower, float upper) {
 	}
 }
 
+void clamp(int* v, int lower, int upper) {
+	if (*v < lower) {
+		*v = lower;
+		return;
+	}
+
+	if (*v > upper) {
+		*v = upper;
+		return;
+	}
+}
+
+
 float lerp(float lower, float upper, float t) {
 	return lower * (1.0f - t) + upper * t;
 }

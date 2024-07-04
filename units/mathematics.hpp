@@ -24,6 +24,7 @@ typedef struct Vec2 {
 } Vec2;
 
 void clamp(float* v, float lower, float upper);
+void clamp(int* v, int lower, int upper);
 float lerp(float lower, float upper, float t);
 void move_towards(float* x, float target, float speed, float dt);
 void move_towards(Vec3* vec, const Vec3& target, float speed, float dt);

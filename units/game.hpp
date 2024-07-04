@@ -13,11 +13,12 @@ enum class Tile_Type {
 	WATER,
 };
 
+
 typedef struct Tile {
 	int height;
 	Tile_Type type;
-	bool walkable;
-	bool is_ramp;
+	bool block_walking;
+	Orientation ramp_direction;
 };
 
 #define FLOOR_W 40
@@ -29,10 +30,7 @@ typedef struct Floor {
 
 enum class Action {
 	IDLE,
-	WALK_FORWARDS,
-	WALK_BACKWARDS,
-	WALK_LEFT,
-	WALK_RIGHT,
+	WALKING,
 };
 
 typedef struct Player {
@@ -50,12 +48,15 @@ typedef struct Player {
 } Player;
 
 void generate_floor(Floor* floor);
+
+void update_player(Player* p, Floor* floor);
+
 void draw_map_floor(Floor* floor, Player* p);
 void draw_floor(Floor* floor);
+void draw_player(Player* p);
 
 
-void update_player(Player* p);
 
 // temporary for testing rendering the cube
-extern Model_Info_For_Shading model_info;
+extern Model_Info_For_Shading base_tile_model_info;
 void init_model_for_drawing();

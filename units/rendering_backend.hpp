@@ -6,6 +6,7 @@
 #include "input_and_window.hpp"
 #include "data_stuff.h"
 #include "shaders.hpp"
+#include "models.hpp"
 
 void create_gl_context(Window_Info* info, int major_version, int minor_version);
 void destroy_gl_context(Window_Info* info);
@@ -25,29 +26,6 @@ void immediate_quad(Vec2 pos, Vec2 size, Vec4 color);
 void immediate_quad(float x, float y, float width, float height, Vec4 color);
 
 void immediate_send();
-
-// 3d rendering stuff
-
-typedef struct Vertex_Info {
-	Vec3 position;
-	Vec3 normal;
-	// uv etc..
-} Vertex_Info;
-
-typedef struct Vertex_Info_Array {
-	size_t capacity;
-	size_t count;
-	Vertex_Info* data;
-} Vertex_Info_Array;
-
-
-typedef struct Static_Model {
-	Vertex_Info_Array mesh;
-	//Mat4 projection;
-} Static_Model;
-
-void construct_cube_triangles(Static_Model* model);
-void construct_normals(Static_Model* model);
 
 typedef struct Model_Info_For_Shading {
 	Static_Model model; // needs be set by user

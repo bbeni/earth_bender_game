@@ -131,6 +131,7 @@
     <ClCompile Include="glad\glad.c" />
     <ClCompile Include="input_and_window.cpp" />
     <ClCompile Include="mathematics.cpp" />
+    <ClCompile Include="models.cpp" />
     <ClCompile Include="rendering_backend.cpp" />
     <ClCompile Include="units.cpp" />
   </ItemGroup>
@@ -141,6 +142,7 @@
     <ClInclude Include="glad\khrplatform.h" />
     <ClInclude Include="input_and_window.hpp" />
     <ClInclude Include="mathematics.hpp" />
+    <ClInclude Include="models.hpp" />
     <ClInclude Include="rendering_backend.hpp" />
     <ClInclude Include="shaders.hpp" />
   </ItemGroup>
