@@ -3,6 +3,9 @@
 #include "game.hpp"
 
 #include <time.h>
+#include "shaders.hpp"
+
+void update_phong(float time);
 
 int main() {
 
@@ -17,13 +20,15 @@ int main() {
     bool quit = false;
     bool fullscreen = false;
 
+    float shake_timer = 0.0f;
+
     Floor floor = {0};
     generate_floor(&floor);
 
     Vec4 color = { 1.0, 0.5, 0.0, 1.0 };
 
-    construct_cube();
-    printf("Vertices in model_cube %d\n", model_cube.mesh.count);
+    init_model_for_drawing();
+    draw_model();
 
 
     while (!quit) {
@@ -45,6 +50,7 @@ int main() {
                     color.x = (float)rand() / RAND_MAX;
                     color.y = (float)rand() / RAND_MAX;
                     color.z = (float)rand() / RAND_MAX;
+                    shake_timer = 0.5f;
                 }
 
                 if (event.key_code == Key_Code::F && (event.modifiers & CTRL)) {
@@ -66,11 +72,34 @@ int main() {
         clamp(&r, 0.0f, 1.0f);
 
         clear_it(r, 0.2f, g, 1.0f);
+        //clear_it(0.4f, 0.4f, 0.35f, 1.0f);
 
-        draw_floor(&floor);
+        draw_map_floor(&floor);
+
+        update_phong(get_time());
+        draw_model();
+
+
+        float shake_amount = shake_timer;
+        Vec3 offset = { shake_amount * 0.02f*cosf(get_time() * 102), shake_amount * 0.03f*sinf(get_time() * 109), 0};
+        Mat4 translation = matrix_translation(offset);
+        Mat4 scale = matrix_scale(lerp(1.0f, 0.95f, shake_amount*shake_amount));
+        
+        glUseProgram(immediate_shader_color.gl_id);
+        shader_uniform_set(immediate_shader_color.gl_id, "projection", translation*scale);
+
+        if (shake_timer > 0.0f) {
+            shake_timer -= get_frame_time();
+            if (shake_timer < 0.0f) {
+                shake_timer = 0.0f;
+            }
+        }
 
         Vec2 pos = { (float)2*mouse_x/width - 1.0f, -(float)2*mouse_y/height + 1.0f };
         Vec2 size = { 0.15f, 0.25f };
+
+
+        glUseProgram(immediate_shader_color.gl_id);
 
         immediate_quad(pos, size, color);
 
@@ -88,6 +117,7 @@ int main() {
         immediate_quad(pos, size, fg_color);
         
         immediate_send();
+
         swap_buffers(&window_info);
 
         //printf("ctrl:%d shift:%d alt:%d meta:%d \n", ctrl_state, shift_state, alt_state, meta_state);

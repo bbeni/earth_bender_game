@@ -5,6 +5,7 @@
 #include "mathematics.hpp"
 #include "input_and_window.hpp"
 #include "data_stuff.h"
+#include "shaders.hpp"
 
 void create_gl_context(Window_Info* info, int major_version, int minor_version);
 void destroy_gl_context(Window_Info* info);
@@ -27,9 +28,9 @@ void immediate_send();
 // 3d rendering stuff
 
 typedef struct Vertex_Info {
-	Vec3 pos;
-	Vec4 color;
-	// etc..
+	Vec3 position;
+	Vec3 normal;
+	// uv etc..
 } Vertex_Info;
 
 typedef struct Vertex_Info_Array {
@@ -41,17 +42,25 @@ typedef struct Vertex_Info_Array {
 
 typedef struct Static_Model {
 	Vertex_Info_Array mesh;
-	Mat4 projection;
-
+	//Mat4 projection;
 } Static_Model;
 
-extern Static_Model model_cube;
+void construct_cube_triangles(Static_Model* model);
+void construct_normals(Static_Model* model);
 
-void construct_cube();
+typedef struct Model_Info_For_Shading {
+	Static_Model model; // needs be set by user
 
-// model strcuct
-// 3d shader laden
-// daten senden an graphikkarte
-// 
+	bool initialized;  // set by shader_init_model()
+	Shader* shader;    // set by shader_init_model()
+	GLuint shader_vao; // set by shader_init_model()
+	GLuint shader_vbo; // set by shader_init_model()
 
-//void concrete_load_model();
+} Model_Info_For_Shading;
+
+
+// send data to shader
+void shader_init_model(Shader* shader, Model_Info_For_Shading* model_info);
+// draw the model (shader is stored by shader_send_attributes)
+void shader_draw_call(Model_Info_For_Shading* model_info);
+//void shader_flush(Shader* shader);

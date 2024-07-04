@@ -1,5 +1,7 @@
 #include "game.hpp"
 #include "rendering_backend.hpp"
+#include "shaders.hpp"
+
 
 void generate_floor(Floor* floor) {
 	for (int i = 0; i < FLOOR_W; i++) {
@@ -14,7 +16,6 @@ void generate_floor(Floor* floor) {
 				else {
 					floor->tiles[i][j].type = Tile_Type::WATER;
 				}
-
 			}
 			else {
 				if (j == 10) {
@@ -51,13 +52,36 @@ Vec4 color_from_tile_type(Tile_Type type) {
 	}
 }
 
+Model_Info_For_Shading model_info = { 0 };
 
-void draw_floor(Floor* floor) {
-	Vec2 size = { 1.0 / 21, 1.0 / 21 };
+void init_model_for_drawing() {
+
+	construct_cube_triangles(&model_info.model);
+	construct_normals(&model_info.model);
+	shader_init_model(&shader_phong, &model_info);
+}
+
+void draw_model() {
+	shader_draw_call(&model_info);
+}
+
+void draw_map_floor(Floor* floor) {
+
+	float width = 0.02f;
+	float height = 0.03f;
+
+	float pad_x = width * 0.1f;
+	float pad_y = height * 0.1f;
+
+	float x0 = width*0.5f - 1.0f;
+	float y0 = height*0.5f - 1.0f;
+
 
 	for (int i = 0; i < FLOOR_W; i++) {
 		for (int j = 0; j < FLOOR_D; j++) {
-			Vec2 pos = { (float)i / 10 - 1.0f + size.x, (float)j / 10 - 1.0f + size.y};
+			
+			Vec2 pos = { x0 + (width + pad_x) * i + 0.5f * width, y0 + (height + pad_y) * j + 0.5f * height };
+			
 			//immediate_quad(pos, size, color_from_tile_type(floor->tiles[i][j].type));
 
 			Vec4 c1 = color_from_tile_type(floor->tiles[i][j].type);
@@ -77,10 +101,10 @@ void draw_floor(Floor* floor) {
 			clamp(&c3.y, 0, 1);
 			clamp(&c3.z, 0, 1);
 
-			Vec2 p1 = { pos.x - size.x, pos.y - size.y };
-			Vec2 p2 = { pos.x + size.x, pos.y - size.y };
-			Vec2 p3 = { pos.x + size.x, pos.y + size.y };
-			Vec2 p4 = { pos.x - size.x, pos.y + size.y };
+			Vec2 p1 = { pos.x - width * 0.5f, pos.y - height * 0.5f };
+			Vec2 p2 = { pos.x + width * 0.5f, pos.y - height * 0.5f };
+			Vec2 p3 = { pos.x + width * 0.5f, pos.y + height * 0.5f };
+			Vec2 p4 = { pos.x - width * 0.5f, pos.y + height * 0.5f };
 
 			immediate_quad(p1, p2, p3, p4, c1, c1, c2, c3);
 

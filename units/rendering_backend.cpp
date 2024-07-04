@@ -242,12 +242,9 @@ void immediate_vertex(Vec2 position, Vec4 color) {
 	immediate_vertex_count++;
 }
 
-void immediate_shader_set_attributes(Shader *shader) {
+void immediate_shader_set_attributes(Immediate_Shader *shader) {
 
 	GLsizei stride = sizeof(Immediate_Vert);
-
-	// TODO shaders attribures go here
-	// https://stackoverflow.com/questions/16380005/opengl-3-4-glvertexattribpointer-stride-and-offset-miscalculation
 	
 	check_gl_error_and_fail("start immediate_shader_attributes_do");
 
@@ -256,6 +253,8 @@ void immediate_shader_set_attributes(Shader *shader) {
 
 	glEnableVertexAttribArray(shader->color_location);
 	glVertexAttribPointer(shader->color_location, 4, GL_FLOAT, GL_FALSE, stride, (GLvoid*) (2 * sizeof(GLfloat)));
+
+	// TODO shaders attribures go here
 
 	check_gl_error_and_fail("end immediate_shader_attributes_do");
 
@@ -271,7 +270,7 @@ void immediate_send() {
 		exit(1);
 	}
 
-	glUseProgram(current_shader->opengl_handle);
+	glUseProgram(current_shader->gl_id);
 
 	check_gl_error_and_fail("after glUseProgram()");
 
@@ -339,68 +338,165 @@ void immediate_quad(Vec2 pos, Vec2 size, Vec4 color) {
 	immediate_quad(p1, p2, p3, p4, color);
 }
 
+
 // 3d rendering stuff
 
-Static_Model model_cube;
+void construct_cube_triangles(Static_Model* model) {
+	float s = 0.59f;
 
-void construct_cube() {
+	Vertex_Info_Array* m = &model->mesh;
 
-	model_cube = { 0 };
 
-	Vertex_Info v = { 0 };
+	for (int i = -1; i < 2; i += 2) {
 
-	// left right
-	for (float i = -1; i < 2; i += 2) {
+		Vertex_Info v1 = { -s, -s, -s * i };
+		Vertex_Info v2 = {  s, -s, -s * i };
+		Vertex_Info v3 = {  s,  s, -s * i };
+		Vertex_Info v4 = { -s,  s, -s * i };
 
-		Vertex_Info v1 = { 0.5 * i, -0.5, -0.5 };
-		Vertex_Info v2 = { 0.5 * i,  0.5, -0.5 };
-		Vertex_Info v3 = { 0.5 * i,  0.5,  0.5 };
-		Vertex_Info v4 = { 0.5 * i, -0.5,  0.5 };
-
-		d_append(&model_cube.mesh, v1);
-		d_append(&model_cube.mesh, v2);
-		d_append(&model_cube.mesh, v4);
-		d_append(&model_cube.mesh, v4);
-		d_append(&model_cube.mesh, v2);
-		d_append(&model_cube.mesh, v3);
-
+		// seems legit
+		d_append(m, v1);
+		d_append(m, v2);
+		d_append(m, v4);
+		d_append(m, v4);
+		d_append(m, v2);
+		d_append(m, v3);
 	}
 
-	// front back
-	for (float i = -1; i < 2; i += 2) {
 
-		Vertex_Info v1 = { -0.5, 0.5 * i, -0.5 };
-		Vertex_Info v2 = {  0.5, 0.5 * i, -0.5 };
-		Vertex_Info v3 = {  0.5, 0.5 * i,  0.5 };
-		Vertex_Info v4 = { -0.5, 0.5 * i,  0.5 };
+	for (int i = -1; i < 2; i += 2) {
 
-		d_append(&model_cube.mesh, v1);
-		d_append(&model_cube.mesh, v2);
-		d_append(&model_cube.mesh, v4);
-		d_append(&model_cube.mesh, v4);
-		d_append(&model_cube.mesh, v2);
-		d_append(&model_cube.mesh, v3);
+		// reverse corners for normals
+		Vertex_Info v1 = { -s, -s * i, -s };
+		Vertex_Info v4 = {  s, -s * i, -s };
+		Vertex_Info v3 = {  s, -s * i,  s };
+		Vertex_Info v2 = { -s, -s * i,  s };
 
+		d_append(m, v1);
+		d_append(m, v2);
+		d_append(m, v4);
+		d_append(m, v4);
+		d_append(m, v2);
+		d_append(m, v3);
 	}
 
-	// top bottom
-	for (float i = -1; i < 2; i += 2) {
 
-		Vertex_Info v1 = { -0.5, -0.5, 0.5 * i};
-		Vertex_Info v2 = {  0.5, -0.5, 0.5 * i};
-		Vertex_Info v3 = {  0.5,  0.5, 0.5 * i};
-		Vertex_Info v4 = { -0.5,  0.5, 0.5 * i};
+	for (int i = -1; i < 2; i += 2) {
+		
+		Vertex_Info v1 = { s * i, -s, -s };
+		Vertex_Info v2 = { s * i,  s, -s };
+		Vertex_Info v3 = { s * i,  s,  s };
+		Vertex_Info v4 = { s * i, -s,  s };
 
-		d_append(&model_cube.mesh, v1);
-		d_append(&model_cube.mesh, v2);
-		d_append(&model_cube.mesh, v4);
-		d_append(&model_cube.mesh, v4);
-		d_append(&model_cube.mesh, v2);
-		d_append(&model_cube.mesh, v3);
-
+		d_append(m, v1);
+		d_append(m, v2);
+		d_append(m, v4);
+		d_append(m, v4);
+		d_append(m, v2);
+		d_append(m, v3);
 	}
+
 }
 
+
+// calculate normals by face normal of triangles;
+void construct_normals(Static_Model* model) {
+
+	assert(model->mesh.count % 3 == 0 && "vertex count needs be multiple of 3 for triangles.\n");
+
+	size_t count = model->mesh.count;
+
+	for (int i = 0; i < count / 3; i++) {
+		size_t base = i * 3;
+		Vec3 a = model->mesh.data[base  ].position;
+		Vec3 b = model->mesh.data[base+1].position;
+		Vec3 c = model->mesh.data[base+2].position;
+
+		Vec3 ab = b - a;
+		Vec3 ac = c - a;
+
+		Vec3 normal = cross(ab, ac);
+		normalize(&normal);
+		model->mesh.data[base  ].normal = normal;
+		model->mesh.data[base+1].normal = normal;
+		model->mesh.data[base+2].normal = normal;
+	}
+
+}
+
+// send data to shader
+void shader_init_model(Shader* shader, Model_Info_For_Shading *model_info) {
+
+	size_t vert_count = model_info->model.mesh.count;
+	Vertex_Info* vertex_data = model_info->model.mesh.data;
+
+	if (vert_count == 0) {
+		return;
+	}
+
+	glUseProgram(shader->gl_id);
+	check_gl_error_and_fail("after glUseProgram()");
+
+	if (!model_info->initialized) {
+		model_info->initialized = true;
+		model_info->shader = shader;
+		glGenVertexArrays(1, &model_info->shader_vao);
+		glBindVertexArray(model_info->shader_vao);
+		glGenBuffers(1, &model_info->shader_vbo);
+	}
+
+	GLuint vao = model_info->shader_vao;
+	GLuint vbo = model_info->shader_vbo;
+
+	glBindVertexArray(vao);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex_Info) * vert_count, vertex_data, GL_DYNAMIC_DRAW);
+
+	GLsizei stride = sizeof(Vertex_Info);
+
+	check_gl_error_and_fail("start - shader_init_model locations");
+
+	glEnableVertexAttribArray(shader->position_location);
+	glVertexAttribPointer(shader->position_location, 3, GL_FLOAT, GL_FALSE, stride, (GLvoid*)0);
+
+	check_gl_error_and_fail("mid - shader_init_model locations");
+
+	glEnableVertexAttribArray(shader->normal_location);
+	glVertexAttribPointer(shader->normal_location, 3, GL_FLOAT, GL_FALSE, stride, (GLvoid*)(3 * sizeof(GLfloat)));
+
+	// TODO uv goes here
+
+	check_gl_error_and_fail("end - shader_init_model locations");
+
+}
+
+void shader_draw_call(Model_Info_For_Shading* model_info) {
+
+	if (model_info->initialized) {
+
+		glUseProgram(model_info->shader->gl_id);
+		glEnable(GL_DEPTH_TEST);
+
+		GLuint vao = model_info->shader_vao;
+		GLuint vbo = model_info->shader_vbo;
+		size_t vert_count = model_info->model.mesh.count;
+
+		check_gl_error_and_fail("before - shader_draw_call locations");
+
+
+		glBindVertexArray(vao);
+		//glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+		check_gl_error_and_fail("mid - shader_draw_call locations");
+
+
+		glDrawArrays(GL_TRIANGLES, 0, vert_count);
+		//glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glBindVertexArray(0);
+
+		check_gl_error_and_fail("end - shader_draw_call locations");
+	}
+}
 
 
 // general rendering stuff
@@ -448,7 +544,7 @@ void backend_init(Window_Info* info) {
 
 		backend_create_shaders();
 
-		current_shader = &shader_color;
+		current_shader = &immediate_shader_color;
 
 	}
 }
