@@ -45,6 +45,7 @@ typedef struct Player {
 	// settings
 	float walk_speed;
 	float turn_speed;
+	float fov;
 
 } Player;
 

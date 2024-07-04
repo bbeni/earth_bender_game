@@ -266,7 +266,7 @@ void init_phong_uniforms() {
 	float far_plane = 1000.0f;
 	Mat4 projection = matrix_perspective(fov, 1.4f, near_plane, far_plane);
 
-	//projection = matrix_perspective_orthographic(-1.5f, 1.5f, -1.0f, 1.0f, near_plane, far_plane);
+	//projection = matrix_perspective_orthographic(-3.5f, 1.5f, 7.0f, 3.0f, near_plane, far_plane);
 
 	// Model transformation
 	Mat4 model = matrix_scale(1.0f);

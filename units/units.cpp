@@ -32,10 +32,9 @@ int main() {
 
     Player player = { 0 };
     player.direction = { 1.0f, 0, 1.0f };
-    //player.desired_direction = { 1.0f, 0, 1.0f };
+    
     player.turn_speed = 1.0f;
     player.walk_speed = 10.0f;
-
 
 
     while (!quit) {
@@ -167,3 +166,7 @@ int main() {
     destroy_window(window_info.window_handle);
 }
 
+int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmdshow)
+{
+    return main();
+}

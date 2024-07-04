@@ -158,6 +158,7 @@ void update_player(Player* p) {
 
 	normalize(&p->direction);
 
+
 	switch (p->current_action) {
 	case Action::WALK_FORWARDS:
 		p->velocity = p->direction;
@@ -173,6 +174,17 @@ void update_player(Player* p) {
 		break;
 	}
 
+	if (p->current_action == Action::WALK_FORWARDS) {
+		move_towards(&p->fov, 110.0f, 290.0f, frame_time);
+	} else {
+		move_towards(&p->fov, 45.0f, 190.0f, frame_time);
+	}
+	float near_plane = 0.01f;
+	float far_plane = 1000.0f;
+	Mat4 projection = matrix_perspective(p->fov, 1.4f, near_plane, far_plane);
+	shader_uniform_set(shader_phong.gl_id, "projection", projection);
+
+
 	p->velocity = p->velocity * p->walk_speed;
 
 	if (p->current_action != Action::IDLE) {
@@ -183,12 +195,16 @@ void update_player(Player* p) {
 
 
 	Vec3 camera_direction = p->direction;
+
+	//camera_direction.x -= 0.5f;
+	//Scamera_direction.z -= 0.5f;
+
 	normalize(&camera_direction);
 
 	Vec3 camera_position = p->pos - camera_direction * 1.5f;
-	camera_position.y = 2.2f;
+	camera_position.y = 1.8f;
 
-	Mat4 view = matrix_camera(camera_position, camera_direction, Vec3{ 0.0f, 1.0f, 0.0f });
+	//Mat4 view = matrix_camera(camera_position, camera_direction, Vec3{ 0.0f, 1.0f * cosf(get_time()), 1.0f * sinf(get_time())});
+	Mat4 view = matrix_camera(camera_position, camera_direction, Vec3{ 0.0f, 1.0f, 0.0f});
 	shader_uniform_set(shader_phong.gl_id, "view", view);
-
 }
