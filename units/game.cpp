@@ -9,17 +9,39 @@ void generate_floor(Floor* floor) {
 
 			Tile* t = &floor->tiles[i][j];
 
-			if (i*i + j*j > 1400) {
+			if (i*i + j*j > 1800) {
 				t->type = Tile_Type::AIR;
 				t->block_walking = true;
 				continue;
 			}
-			
+
+			// hole
+			if ((i > 20) && (j > 5) && (i < 25) && (j < 13)) {
+				t->type = Tile_Type::LAVA;
+				t->block_walking = true;
+				continue;
+
+			}
+
+			if ((j > 23) && (i > 5) && (j < 29) && (i < 13)) {
+				t->type = Tile_Type::EARTH;
+				//t->block_walking = true;
+				t->height = 5;
+				continue;
+			}
+
+			if ((i >= 1) && (i <= 6) && (j == 25)) {
+				t->type = Tile_Type::EARTH;
+				t->ramp_direction = Orientation::EAST;
+				t->height = i - 1;
+				continue;
+			}
+
 			if ((i > 3 && i < 19) && (j > 3 && j < 19)) {
 
 				if (j == 10) {
 					t->type = Tile_Type::STONE;
-					t->height = 2;
+					t->height = 3;
 				}
 
 				else {
@@ -50,7 +72,14 @@ void generate_floor(Floor* floor) {
 	}
 
 	floor->tiles[3][10].ramp_direction = Orientation::EAST;
+	floor->tiles[4][10].ramp_direction = Orientation::EAST;
+	floor->tiles[4][10].height -= 1;
+
 	floor->tiles[19][10].ramp_direction = Orientation::WEST;
+	floor->tiles[18][10].ramp_direction = Orientation::WEST;
+	floor->tiles[18][10].height -= 1;
+
+
 }
 
 
@@ -67,7 +96,7 @@ Vec4 color_from_tile_type(Tile_Type type) {
 	case Tile_Type::STONE:
 		return Vec4{ 0.5, 0.5, 0.5, 1.0 };
 	case Tile_Type::LAVA:
-		return Vec4{ 0.65, 0.3, 0.0, 1.0 };
+		return Vec4{ 0.99, 0.45, 0.1, 1.0 };
 	case Tile_Type::WATER:
 		return Vec4{ 0.0, 0.2, 0.7, 0.2 };
 	default:
@@ -124,8 +153,13 @@ void draw_floor(Floor* floor) {
 			shader_uniform_set(shader_phong.gl_id, "object_color", Vec3{ color.x, color.y, color.z });
 
 			Mat4 translation = matrix_translation(Vec3{ 1.0f * i, elevation, 1.0f * j});
-			Mat4 model = matrix_scale(0.99f) * translation;
+			Mat4 model = translation;
 			shader_uniform_set(shader_phong.gl_id, "model", model);
+
+			if (tile.type == Tile_Type::LAVA) {
+				float ambient_strength = 0.9f;
+				shader_uniform_set(shader_phong.gl_id, "ambient_strength", ambient_strength);
+			}
 
 			switch (tile.ramp_direction) {
 			case Orientation::NORTH:
@@ -139,6 +173,12 @@ void draw_floor(Floor* floor) {
 			default:
 				shader_draw_call(&base_tile_model_info);
 			}
+
+			if (tile.type == Tile_Type::LAVA) {
+				float ambient_strength = 0.25f;
+				shader_uniform_set(shader_phong.gl_id, "ambient_strength", ambient_strength);
+			}
+
 		}
 	}
 }
@@ -226,9 +266,9 @@ void update_player(Player* p, Floor* floor) {
 	normalize(&p->direction);
 
 	if (p->current_action == Action::WALKING) {
-		move_towards(&p->fov, 70.0f, 290.0f, frame_time);
+		move_towards(&p->fov, 70.0f, 90.0f, frame_time);
 	} else {
-		move_towards(&p->fov, 60.0f, 190.0f, frame_time);
+		move_towards(&p->fov, 60.0f, 90.0f, frame_time);
 	}
 
 	float near_plane = 0.01f;
@@ -247,8 +287,8 @@ void update_player(Player* p, Floor* floor) {
 
 	Tile* desired_tile = NULL;
 	{
-		int i = (int)(desired_pos.x + 0.5f);
-		int j = (int)(desired_pos.z + 0.5f);
+		int i = (int)floorf(desired_pos.x + 0.5f);
+		int j = (int)floorf(desired_pos.z + 0.5f);
 		printf("ij: %d %d\n", i, j);
 
 		if ((i >= 0 && i < FLOOR_W) && (j >= 0 && j < FLOOR_D)) {
@@ -270,7 +310,7 @@ void update_player(Player* p, Floor* floor) {
 	Vec3 camera_direction = Vec3{ 0.0f, -1.0f, 1.0f };
 	normalize(&camera_direction);
 
-	Vec3 camera_position = Vec3{ 0.0f, 15.0f, -10.0f };
+	Vec3 camera_position = Vec3{ 0.0f, 10.0f, -7.0f };
 
 	camera_position.x = camera_position.x - p->pos.x;   // TODO: fix x-axis is flipped. Also, we should prbably use z componoent for elevation. 
 	camera_position.y = camera_position.y + p->pos.y;
