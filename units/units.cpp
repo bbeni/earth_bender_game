@@ -28,11 +28,47 @@ int main() {
     Vec4 color = { 1.0, 0.5, 0.0, 1.0 };
 
     init_model_for_drawing();
-    draw_model();
+    draw_floor(&floor);
+
+    Player player = { 0 };
+    player.direction = { 1.0f, 0, 1.0f };
+    //player.desired_direction = { 1.0f, 0, 1.0f };
+    player.turn_speed = 1.0f;
+    player.walk_speed = 10.0f;
+
 
 
     while (!quit) {
         update_window_events();
+
+        player.current_action = Action::IDLE;
+        if (get_key_flags_state(VK_UP) & Key_State_Flags::DOWN) {
+            player.current_action = Action::WALK_FORWARDS;
+        }
+        if (get_key_flags_state(VK_DOWN) & Key_State_Flags::DOWN) {
+            player.current_action = Action::WALK_BACKWARDS;
+        }
+        if (get_key_flags_state(VK_RIGHT) & Key_State_Flags::DOWN) {
+            player.current_action = Action::WALK_RIGHT;
+        }
+        if (get_key_flags_state(VK_LEFT) & Key_State_Flags::DOWN) {
+            player.current_action = Action::WALK_LEFT;
+        }
+
+        // temporary
+        if (get_key_flags_state((uint32_t)Key_Code::W) & Key_State_Flags::DOWN) {
+            player.current_action = Action::WALK_FORWARDS;
+        }
+        if (get_key_flags_state((uint32_t)Key_Code::S) & Key_State_Flags::DOWN) {
+            player.current_action = Action::WALK_BACKWARDS;
+        }
+        if (get_key_flags_state((uint32_t)Key_Code::D) & Key_State_Flags::DOWN) {
+            player.current_action = Action::WALK_RIGHT;
+        }
+        if (get_key_flags_state((uint32_t)Key_Code::A) & Key_State_Flags::DOWN) {
+            player.current_action = Action::WALK_LEFT;
+        }
+
 
         for (int i = 0; i < events_this_frame.count; i++) {
             Event event = events_this_frame.data[i];
@@ -74,10 +110,13 @@ int main() {
         clear_it(r, 0.2f, g, 1.0f);
         //clear_it(0.4f, 0.4f, 0.35f, 1.0f);
 
-        draw_map_floor(&floor);
+        update_player(&player);
 
-        update_phong(get_time());
-        draw_model();
+        draw_map_floor(&floor, &player);
+
+        //update_phong(get_time());
+
+        draw_floor(&floor);
 
 
         float shake_amount = shake_timer;
@@ -96,7 +135,7 @@ int main() {
         }
 
         Vec2 pos = { (float)2*mouse_x/width - 1.0f, -(float)2*mouse_y/height + 1.0f };
-        Vec2 size = { 0.15f, 0.25f };
+        Vec2 size = { 0.05f, 0.075f };
 
 
         glUseProgram(immediate_shader_color.gl_id);
@@ -104,8 +143,8 @@ int main() {
         immediate_quad(pos, size, color);
 
         Vec4 fg_color = color;
-        size.x -= 0.02f;
-        size.y -= 0.03f;
+        size.x += 0.02f;
+        size.y += 0.03f;
         fg_color.x += 0.2f;
         fg_color.y += 0.2f;
         fg_color.z += 0.2f;

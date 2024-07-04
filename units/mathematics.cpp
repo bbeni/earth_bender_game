@@ -18,6 +18,32 @@ float lerp(float lower, float upper, float t) {
 }
 
 
+void move_towards(float* x, float target, float speed, float dt) {
+	if (*x == target) {
+		return;
+	}
+	if (*x > target) {
+		*x -= speed * dt;
+		if (*x < target) {
+			*x = target;
+		}
+	}
+	else {
+		*x += speed * dt;
+		if (*x > target) {
+			*x = target;
+		}
+	}
+}
+
+void move_towards(Vec3* vec, const Vec3& target, float speed, float dt) {
+	move_towards(&vec->x, target.x, speed, dt);
+	move_towards(&vec->y, target.y, speed, dt);
+	move_towards(&vec->z, target.z, speed, dt);
+}
+
+
+
 float dot(const Vec3& a, const Vec3& b) {
 	return a.x * b.x + a.y * b.y + a.z * b.z;
 }
@@ -53,6 +79,11 @@ Vec3 Vec3::operator-(const Vec3& other) const {
 	};
 	return v;
 }
+
+Vec3 Vec3::operator*(float f) const {
+	return Vec3{ f * x, f * y, f * z };
+}
+
 
 const Mat4 mat4_unit =
 {
@@ -191,8 +222,39 @@ Mat4 matrix_unit() {
 }
 
 
-Mat4 matrix_look_at(const Vec3& camera, const Vec3& target, const Vec3& up_axis) {
+Mat4 matrix_camera(Vec3 pos, Vec3 looking_direction, Vec3 up) {
 
+	Vec3 right = cross(looking_direction, up);
+
+	normalize(&looking_direction);
+	normalize(&up);
+	normalize(&right);
+
+	up = cross(right, looking_direction);
+
+	Mat4 result = { 0 };
+
+	result.u11 = -right.x;
+	result.u12 = -right.y;
+	result.u13 = -right.z;
+
+	result.u21 = up.x;
+	result.u22 = up.y;
+	result.u23 = up.z;
+
+	result.u31 = -looking_direction.x;
+	result.u32 = -looking_direction.y;
+	result.u33 = -looking_direction.z;
+
+	result.u41 = -dot(right, pos);
+	result.u42 = -dot(up, pos);
+	result.u43 = dot(looking_direction, pos);
+
+	result.u44 = 1.0f;
+	return result;
+}
+
+Mat4 matrix_look_at(const Vec3& camera, const Vec3& target, const Vec3& up_axis) {
 
 	Mat4 result = { 0 };
 
@@ -200,7 +262,9 @@ Mat4 matrix_look_at(const Vec3& camera, const Vec3& target, const Vec3& up_axis)
 	Vec3 forward = eye;
 	normalize(&forward);
 
-	Vec3 right = cross(up_axis, forward);
+	Vec3 real_up = up_axis - forward * dot(up_axis, forward); 
+
+	Vec3 right = cross(real_up, forward);
 	normalize(&right);
 
 	Vec3 new_up = cross(forward, right);

@@ -6,8 +6,13 @@
 void generate_floor(Floor* floor) {
 	for (int i = 0; i < FLOOR_W; i++) {
 		for (int j = 0; j < FLOOR_D; j++) {
+
+			if (i*i + j*j > 1400) {
+				floor->tiles[i][j].type = Tile_Type::AIR;
+				continue;
+			}
 			
-			if ((i > 3 && i < 17) && (j > 3 && j < 17)) {
+			if ((i > 3 && i < 19) && (j > 3 && j < 19)) {
 
 				if (j == 10) {
 					floor->tiles[i][j].type = Tile_Type::STONE;
@@ -46,7 +51,7 @@ Vec4 color_from_tile_type(Tile_Type type) {
 	case Tile_Type::LAVA:
 		return Vec4{ 0.65, 0.3, 0.0, 1.0 };
 	case Tile_Type::WATER:
-		return Vec4{ 0.0, 0.2, 0.7, 1.0 };
+		return Vec4{ 0.0, 0.2, 0.7, 0.2 };
 	default:
 		return Vec4{ 1.0, 0, 0, 1.0 };
 	}
@@ -61,26 +66,53 @@ void init_model_for_drawing() {
 	shader_init_model(&shader_phong, &model_info);
 }
 
-void draw_model() {
-	shader_draw_call(&model_info);
+void draw_floor(Floor* floor) {
+
+	srand((int)(get_time()*0.1f ));
+
+	for (int i = 0; i < FLOOR_W; i++) {
+		for (int j = 0; j < FLOOR_D; j++) {
+
+			Tile tile = floor->tiles[i][j];
+
+			if (tile.type == Tile_Type::AIR) continue;
+
+			float random_elevation = -(float)((rand() % 12) == 0) + (float)((rand() % 20) == 0);
+			
+			Vec4 color =color_from_tile_type(tile.type);
+			shader_uniform_set(shader_phong.gl_id, "object_color", Vec3{ color.x, color.y, color.z });
+
+			Mat4 translation = matrix_translation(Vec3{ 1.0f * i, random_elevation, 1.0f * j});
+			Mat4 model = matrix_scale(0.99f) * translation;
+			shader_uniform_set(shader_phong.gl_id, "model", model);
+			shader_draw_call(&model_info);
+		}
+	}
 }
 
-void draw_map_floor(Floor* floor) {
+void draw_map_floor(Floor* floor, Player *p) {
 
-	float width = 0.02f;
-	float height = 0.03f;
+	float offset = -1.0f; // rendering left bottom corner is (-1, -1)
 
-	float pad_x = width * 0.1f;
-	float pad_y = height * 0.1f;
+	float width = 0.012f;
+	float height = 0.018f;
 
-	float x0 = width*0.5f - 1.0f;
-	float y0 = height*0.5f - 1.0f;
+	float pad_x = 0;// width * 0.013f;
+	float pad_y = 0;//height * 0.013f;
 
+	float x0 = width * 2.5f;
+	float y0 = height * 2.5f;
+
+	Vec2 player_pos = { x0 + offset + (width + pad_x) * p->pos.x + 0.5f * width, y0 + offset + (height + pad_y) * p->pos.z + 0.5f * height };
+
+	immediate_quad(player_pos, Vec2{ width, height }, Vec4{ 1.0f, 0.0f, 0.0f, 1.0f });
+
+	Vec2 pos;
 
 	for (int i = 0; i < FLOOR_W; i++) {
 		for (int j = 0; j < FLOOR_D; j++) {
 			
-			Vec2 pos = { x0 + (width + pad_x) * i + 0.5f * width, y0 + (height + pad_y) * j + 0.5f * height };
+			pos = { x0 + offset + (width + pad_x) * i + 0.5f * width, y0 + offset + (height + pad_y) * j + 0.5f * height };
 			
 			//immediate_quad(pos, size, color_from_tile_type(floor->tiles[i][j].type));
 
@@ -110,5 +142,53 @@ void draw_map_floor(Floor* floor) {
 
 		}
 	}
+	immediate_quad(offset, offset, (width + pad_x) * FLOOR_W - pad_x + 2*x0, (height + pad_y) * FLOOR_D - pad_y + 2*y0, Vec4{ 0, 0, 0, 1 });
+
 }
 
+
+void update_player(Player* p) {
+	float frame_time = get_frame_time();
+
+	/*
+	if (p->desired_direction.x != p->direction.x || p->desired_direction.y != p->direction.y) {
+		move_towards(&p->direction, p->desired_direction, p->turn_speed, frame_time);
+		normalize(&p->direction);
+	}*/
+
+	normalize(&p->direction);
+
+	switch (p->current_action) {
+	case Action::WALK_FORWARDS:
+		p->velocity = p->direction;
+		break;
+	case Action::WALK_BACKWARDS:
+		p->velocity = p->direction * -1;
+		break;
+	case Action::WALK_RIGHT:
+		p->velocity = cross(p->direction, Vec3{ 0.0f, 1.0f, 0.0f });
+		break;
+	case Action::WALK_LEFT:
+		p->velocity = cross(p->direction, Vec3{ 0.0f, -1.0f, 0.0f });
+		break;
+	}
+
+	p->velocity = p->velocity * p->walk_speed;
+
+	if (p->current_action != Action::IDLE) {
+		p->pos = p->pos + p->velocity * get_frame_time();
+	}
+
+	p->pos.y = 0;
+
+
+	Vec3 camera_direction = p->direction;
+	normalize(&camera_direction);
+
+	Vec3 camera_position = p->pos - camera_direction * 1.5f;
+	camera_position.y = 2.2f;
+
+	Mat4 view = matrix_camera(camera_position, camera_direction, Vec3{ 0.0f, 1.0f, 0.0f });
+	shader_uniform_set(shader_phong.gl_id, "view", view);
+
+}

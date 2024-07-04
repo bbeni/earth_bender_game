@@ -8,7 +8,8 @@
 
 void backend_create_shaders();
 void shader_uniform_set(GLuint shader_id, const char* value_name, const Mat4& mat4);
-
+void shader_uniform_set(GLuint shader_id, const char* value_name, const Vec3& vec3);
+void shader_uniform_set(GLuint shader_id, const char* value_name, const float value);
 
 typedef struct Immediate_Shader {
 	GLuint gl_id;
@@ -87,32 +88,35 @@ Immediate_Shader* current_shader;
 
 Immediate_Shader immediate_shader_color;
 
-// 0 is vertexshader, 1 is fragmentshader
+
+#define MULTILINE_STRING(...) #__VA_ARGS__ // just quote the string
+
 const char* immediate_shader_color_source[2] = {
-	"#version 330 core\n"
-	"\n"
-	"out vec4 iterated_color;\n"
-	"layout(location = 0) in vec2 vert_position;\n"
-	"layout(location = 1) in vec4 vert_color;\n"
-	"\n"
-	"uniform mat4 projection;\n"
-	"\n"
-	"void main() {\n"
-	"   gl_Position = projection * vec4(vert_position, 0.0, 1.0);\n"
-	"   iterated_color = vert_color;\n"
-	"}\n"
-	"\n"
+MULTILINE_STRING(
+	#version 330 core\n
+	
+	out vec4 iterated_color;\n
+	layout(location = 0) in vec2 vert_position;\n
+	layout(location = 1) in vec4 vert_color;\n
+	
+	uniform mat4 projection;\n
+	
+	void main() {\n
+	   gl_Position = projection * vec4(vert_position, 0.0, 1.0);\n
+	   iterated_color = vert_color;\n
+	}\n
+),
+MULTILINE_STRING(
+	#version 330 core\n
 
-	,
-
-	"#version 330 core\n"
-	"\n"
-	"out vec4 color;\n"
-	"in vec4 iterated_color;\n"
-	"\n"
-	"void main() {\n"
-	"	color = iterated_color;\n"
-	"}\n"
+	out vec4 color;\n
+	
+	in vec4 iterated_color;\n
+	
+	void main() {\n
+		color = iterated_color;\n
+	}\n
+)
 };
 
 
@@ -121,52 +125,53 @@ Shader shader_phong;
 // TODO goal is a phong shader
 // 0 is vertexshader, 1 is fragmentshader
 const char* shader_phong_source[2] = {
-	"#version 330 core\n"
-	"\n"
-	"out vec3 frag_pos;\n"
-	"out vec3 frag_normal;\n"
-	"\n"
-	"layout(location = 0) in vec3 vert_position;\n"
-	"layout(location = 1) in vec3 vert_normal;\n"
-	"\n"
-	"uniform mat4 projection;\n"
-	"uniform mat4 model;\n"
-	"uniform mat4 view;\n"
-	"\n"
-	"void main() {\n"
-	"	\n"
-	"   gl_Position = projection * view * model * vec4(vert_position, 1.0);\n"
-	"	frag_pos = vec3(model * vec4(vert_position, 1.0));\n"
-	"	frag_normal = vert_normal;\n"
-	"}\n"
-	
-	,
-
-	"#version 330 core\n"
-	//"precision mediump float;\n"
-	"\n"
-	"out vec4 color;\n"
-	"in  vec3 frag_pos;\n"
-	"in  vec3 frag_normal;\n"
-	"\n"
-	"uniform vec3 object_color;\n"
-	"uniform vec3 light_position;\n"
-	"uniform vec3 light_color;\n"
-	"uniform float ambient_strength;\n"
-	"\n"
-	"void main() {\n"
-	"   vec3 norm = normalize(frag_normal);\n"
-	"   vec3 light_dir = normalize(light_position - frag_pos);\n"
-	"   \n"
-	"   float diff = max(dot(norm, light_dir), 0.0);\n"
-	"   vec3 diffuse = diff * light_color;\n"
-	"	\n"
-	"   vec3 ambient = ambient_strength * light_color;\n"
-	"	vec3 res = (ambient + diffuse) * object_color;\n"
-	"   //color = vec4(0.5, 0.5, 1.0, 1.0);\n"	
-	"   //color = vec4(dot(norm, vec3(-1, 0, 0)), 0.5, 0.0, 1.0);\n"
-	"	color = vec4(res, 1.0);\n"
-	"}\n"
+MULTILINE_STRING(
+	#version 330 core\n
+	\n
+	out vec3 frag_pos;\n
+	out vec3 frag_normal;\n
+	\n
+	layout(location = 0) in vec3 vert_position;\n
+	layout(location = 1) in vec3 vert_normal;\n
+	\n
+	uniform mat4 projection;\n
+	uniform mat4 model;\n
+	uniform mat4 view;\n
+	\n
+	void main() {\n
+		\n
+	   gl_Position = projection * view * model * vec4(vert_position, 1.0);\n
+		frag_pos = vec3(model * vec4(vert_position, 1.0));\n
+		frag_normal = vert_normal;\n
+	}\n
+),
+MULTILINE_STRING(
+	#version 330 core\n
+	//precision mediump float;\n
+	\n
+	out vec4 color;\n
+	in  vec3 frag_pos;\n
+	in  vec3 frag_normal;\n
+	\n
+	uniform vec3 object_color;\n
+	uniform vec3 light_position;\n
+	uniform vec3 light_color;\n
+	uniform float ambient_strength;\n
+	\n
+	void main() {\n
+	   vec3 norm = normalize(frag_normal);\n
+	   vec3 light_dir = normalize(light_position - frag_pos);\n
+	   \n
+	   float diff = max(dot(norm, light_dir), 0.0);\n
+	   vec3 diffuse = diff * light_color;\n
+		\n
+	   vec3 ambient = ambient_strength * light_color;\n
+		vec3 res = (ambient + diffuse) * object_color;\n
+	   //color = vec4(0.5, 0.5, 1.0, 1.0);\n
+	   //color = vec4(dot(norm, vec3(-1, 0, 0)), 0.5, 0.0, 1.0);\n
+		color = vec4(res, 1.0);\n
+	}\n
+)
 };
 
 
@@ -226,7 +231,6 @@ void backend_create_shaders() {
 	Mat4 projection = matrix_unit();
 	shader_uniform_set(immediate_shader_color.gl_id, "projection", projection);
 
-
 	shader_phong = { 0 };
 	shader_phong.gl_id = compile_shader(shader_phong_source);
 	shader_phong.position_location = 0;
@@ -236,32 +240,49 @@ void backend_create_shaders() {
 }
 
 void init_phong_uniforms() {
-
 	glUseProgram(shader_phong.gl_id);
 
-	//glEnable(GL_DEPTH_TEST);
-	//glDepthFunc(GL_LESS);
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
 
-	Vec3 offset = { -0.0f, -0.0f, -0.0f };
-	Mat4 view = matrix_translation(offset);
-	Mat4 projection = matrix_unit();
-	Mat4 model = matrix_scale(0.25f);
+	Vec3 light_pos = { 5.4f, 5.5f, 4.0f };
+	Vec3 light_color = { 0.95f, 0.8f, 0.7f };
+	Vec3 object_color = { 0.7f, 0.9f, 0.3f };
+	float ambient_strength = 0.25f;
 
-	Vec3 light_pos = { 0.0f, -1.5f, -1.0f };
-	Vec3 light_color = { 0.98f, 0.9f, 0.9f };
-	Vec3 object_color = { 0.2f, 0.9f, 0.6f };
-	float ambient_strength = 0.3;
+	float time = 0.0f;
+	// Camera/view transformation
+	//Vec3 camera_pos = { -18.5f * cosf(time), -10.0f, -18.5f * sinf(time) };
+	//Vec3 camera_pos = { -20.0f,  5.0f, -20.0f };
+	//Vec3 camera_target = { 0.0f, 6.0f, 0.0f };
+	//Vec3 up_vector = { 0.0f, -1.0f, 0.0f };
+	//Mat4 view = matrix_look_at(camera_pos, camera_target, up_vector);
 
-	shader_uniform_set(shader_phong.gl_id, "projection", transpose(projection));
-	shader_uniform_set(shader_phong.gl_id, "model", transpose(model));
-	shader_uniform_set(shader_phong.gl_id, "view", transpose(view));
+	Mat4 view = matrix_camera(Vec3{ -3.0f, 3.0f, -3.0f }, Vec3{ 1.0f, 0.0f, 1.0f}, Vec3{0.0f, 1.0f, 0.0f});
+
+	// Perspective projection
+	float fov = 60.0f;
+	float near_plane = 0.01f;
+	float far_plane = 1000.0f;
+	Mat4 projection = matrix_perspective(fov, 1.4f, near_plane, far_plane);
+
+	//projection = matrix_perspective_orthographic(-1.5f, 1.5f, -1.0f, 1.0f, near_plane, far_plane);
+
+	// Model transformation
+	Mat4 model = matrix_scale(1.0f);
+
+	shader_uniform_set(shader_phong.gl_id, "projection", projection);
+	shader_uniform_set(shader_phong.gl_id, "model", model);
+	shader_uniform_set(shader_phong.gl_id, "view", view);
 	shader_uniform_set(shader_phong.gl_id, "light_position", light_pos);
 	shader_uniform_set(shader_phong.gl_id, "light_color", light_color);
 	shader_uniform_set(shader_phong.gl_id, "ambient_strength", ambient_strength);
 	shader_uniform_set(shader_phong.gl_id, "object_color", object_color);
+
 }
 
-// temporary
+// TODO delete:
+// temporary 
 void update_phong(float time) {
 	glUseProgram(shader_phong.gl_id);
 
@@ -273,12 +294,12 @@ void update_phong(float time) {
 	Vec3 light_pos = {1.4f, 2.5f, 2.0f};
 
 	//printf("light position: %f %f %f\n", light_pos.x, light_pos.y, light_pos.z);
-	Vec3 light_color = { 0.95f, 0.6f, 0.7f };
-	Vec3 object_color = { 0.7f, 0.6f, 0.3f };
+	Vec3 light_color = { 0.95f, 0.8f, 0.7f };
+	Vec3 object_color = { 0.7f, 0.9f, 0.3f };
 	float ambient_strength = 0.01f;
 
 	// Camera/view transformation
-	Vec3 camera_pos = { -2.5f*cosf(time), -1.0f, -3.0f};
+	Vec3 camera_pos = { -18.5f*cosf(time), -10.0f, -18.5f * sinf(time) };
 	Vec3 camera_target = { 0.0f, 0.0f, 0.0f };
 	Vec3 up_vector = { 0.0f, 1.0f, 0.0f };
 	Mat4 view = matrix_look_at(camera_pos, camera_target, up_vector);
@@ -286,7 +307,7 @@ void update_phong(float time) {
 	// Perspective projection
 	float fov = 60.0f;
 	float near_plane = 0.01f;
-	float far_plane = 1000.0f;
+	float far_plane = 100.0f;
 	Mat4 projection = matrix_perspective(fov, 1.4f, near_plane, far_plane);
 
 	//projection = matrix_perspective_orthographic(-1.5f, 1.5f, -1.0f, 1.0f, near_plane, far_plane);

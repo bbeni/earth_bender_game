@@ -22,6 +22,7 @@ void immediate_triangle();
 void immediate_quad(Vec2 p1, Vec2 p2, Vec2 p3, Vec2 p4, Vec4 color);
 void immediate_quad(Vec2 p1, Vec2 p2, Vec2 p3, Vec2 p4, Vec4 c1, Vec4 c2, Vec4 c3, Vec4 c4);
 void immediate_quad(Vec2 pos, Vec2 size, Vec4 color);
+void immediate_quad(float x, float y, float width, float height, Vec4 color);
 
 void immediate_send();
 

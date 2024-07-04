@@ -338,11 +338,20 @@ void immediate_quad(Vec2 pos, Vec2 size, Vec4 color) {
 	immediate_quad(p1, p2, p3, p4, color);
 }
 
+void immediate_quad(float x, float y, float width, float height, Vec4 color) {
+	Vec2 p1 = { x,		   y };
+	Vec2 p2 = { x,		   y + height };
+	Vec2 p3 = { x + width, y + height };
+	Vec2 p4 = { x + width, y };
+	immediate_quad(p1, p2, p3, p4, color);
+}
+
+
 
 // 3d rendering stuff
 
 void construct_cube_triangles(Static_Model* model) {
-	float s = 0.59f;
+	float s = 0.5f;
 
 	Vertex_Info_Array* m = &model->mesh;
 

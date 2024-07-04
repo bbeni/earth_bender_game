@@ -16,6 +16,7 @@ typedef struct Vec3 {
 	float x, y, z;
 	Vec3 operator+(const Vec3& other) const;
 	Vec3 operator-(const Vec3& other) const;
+	Vec3 operator*(float f) const;
 } Vec3;
 
 typedef struct Vec2 {
@@ -24,6 +25,9 @@ typedef struct Vec2 {
 
 void clamp(float* v, float lower, float upper);
 float lerp(float lower, float upper, float t);
+void move_towards(float* x, float target, float speed, float dt);
+void move_towards(Vec3* vec, const Vec3& target, float speed, float dt);
+
 
 float dot(const Vec3& a, const Vec3& b);
 Vec3 cross(const Vec3& a, const Vec3& b);
@@ -55,5 +59,6 @@ Mat4 matrix_scale(float scale);
 Mat4 matrix_unit();
 
 Mat4 matrix_look_at(const Vec3& from, const Vec3& to, const Vec3& up);
+Mat4 matrix_camera(Vec3 pos, Vec3 looking_direction, Vec3 up);
 Mat4 matrix_perspective(float vertical_fov, float aspect, float near, float far);
 Mat4 matrix_perspective_orthographic(float left, float right, float top, float bottom, float near, float far);

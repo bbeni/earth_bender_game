@@ -76,6 +76,8 @@ extern bool initted;
 extern std::map<uint32_t, bool>            key_down_table;
 extern std::map<uint32_t, Key_State_Flags> key_flags_table;
 
+Key_State_Flags get_key_flags_state(uint32_t vkey);
+
 // time functions
 
 double get_time();       // the time since the firt call to this function

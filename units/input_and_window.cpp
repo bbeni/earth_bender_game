@@ -185,6 +185,13 @@ bool set_key_down_state(uint32_t vkey, bool is_down, Key_State_Flags* new_flags)
     return is_down;
 }
 
+Key_State_Flags get_key_flags_state(uint32_t vkey) {
+    if (key_down_table.count(vkey) > 0) {
+        return key_flags_table[vkey];
+    }
+    return (Key_State_Flags)0;
+}
+
 void send_vk_event(uint64_t vkey, bool key_down, bool repeat, bool extended) {
 
     // TODO handle reapeat
