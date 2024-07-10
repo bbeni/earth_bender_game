@@ -135,7 +135,7 @@
     <ClCompile Include="models.cpp" />
     <ClCompile Include="rendering_backend.cpp" />
     <ClCompile Include="resource_loading.cpp" />
-    <ClCompile Include="units.cpp" />
+    <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="data_stuff.h" />

@@ -293,9 +293,9 @@ void update_player(Player* p, Floor* floor) {
 
 
 	if (p->current_action == Action::WALKING) {
-		move_towards(&p->fov, 72.0f, 90.0f, frame_time);
+		//move_towards(&p->fov, 72.0f, 90.0f, frame_time);
 	} else {
-		move_towards(&p->fov, 70.0f, 90.0f, frame_time);
+		move_towards(&p->fov, 70.0f, 170.0f, frame_time);
 	}
 
 	float near_plane = 0.01f;
