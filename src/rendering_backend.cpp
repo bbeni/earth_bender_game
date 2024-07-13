@@ -284,7 +284,7 @@ void immediate_send() {
 
 	immediate_shader_set_attributes(current_shader);
 
-	glDrawArrays(GL_TRIANGLES, 0, immediate_vertex_count);
+	glDrawArrays(GL_TRIANGLES, 0, (GLsizei)immediate_vertex_count);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
@@ -413,7 +413,7 @@ void shader_draw_call(Model_Info_For_Shading* model_info) {
 		check_gl_error_and_fail("mid - shader_draw_call locations");
 
 
-		glDrawArrays(GL_TRIANGLES, 0, vert_count);
+		glDrawArrays(GL_TRIANGLES, 0, (GLsizei)vert_count);
 		//glBindBuffer(GL_ARRAY_BUFFER, 0);
 		glBindVertexArray(0);
 

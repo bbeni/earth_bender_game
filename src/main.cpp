@@ -5,8 +5,6 @@
 #include <time.h>
 #include "shaders.hpp"
 
-void update_phong(float time);
-
 int main() {
 
     int width = 1080;
@@ -31,11 +29,11 @@ int main() {
     draw_floor(&floor);
 
     Player player = { 0 };
-    player.pos = Vec3{0.0f, 0.0f, 10.0f };
-    player.direction = Vec3{ 0.0f, 0.0f, 1.0f };
+    player.pos = Vec3{1.0f, 1.0f, 1.0f };
+    player.direction_angle = 0.0f;
     
-    player.turn_speed = 6.0f;
-    player.walk_speed = 10.0f;
+    player.turn_speed = 19.0f;
+    player.walk_speed = 11.0f;
 
     while (!quit) {
 
@@ -43,25 +41,28 @@ int main() {
 
         player.current_action = Action::IDLE;
 
-        player.target_direction = { 0.0f, 0.0f, 0.0f };
+        player.target_direction_angle = 0.0f;
 
         if ((get_key_flags_state(VK_UP) | get_key_flags_state((uint32_t)Key_Code::W)) & Key_State_Flags::DOWN ) {
             player.current_action = Action::WALKING;
-            player.target_direction = player.target_direction + Vec3{ 0.0f, 0.0f, 1.0f };
+            // this is foward
         }
         if ((get_key_flags_state(VK_DOWN) | get_key_flags_state((uint32_t)Key_Code::S)) & Key_State_Flags::DOWN) {
             player.current_action = Action::WALKING;
-            player.target_direction = player.target_direction + Vec3{ 0.0f, 0.0f, -1.0f };
+            player.target_direction_angle += M_PI;
 
         }
         if ((get_key_flags_state(VK_RIGHT) | get_key_flags_state((uint32_t)Key_Code::D)) & Key_State_Flags::DOWN) {
             player.current_action = Action::WALKING;
-            player.target_direction = player.target_direction + Vec3{ 1.0f, 0.0f, 0.0f };
-
+            player.target_direction_angle += M_PI/2;
         }
         if ((get_key_flags_state(VK_LEFT) | get_key_flags_state((uint32_t)Key_Code::A)) & Key_State_Flags::DOWN) {
             player.current_action = Action::WALKING;
-            player.target_direction = player.target_direction + Vec3{ -1.0f, 0.0f, 0.0f };
+            player.target_direction_angle -= M_PI/2;
+        }
+
+        if (player.target_direction_angle > M_PI) {
+            player.target_direction_angle -= 2*M_PI;
         }
 
 

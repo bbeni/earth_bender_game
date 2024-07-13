@@ -35,11 +35,11 @@ enum class Action {
 };
 
 typedef struct Player {
-	Vec3 pos;
-	Vec3 direction;
-	Vec3 velocity;
+	Vec3  pos;
+	float direction_angle;
+	Vec3  velocity;
 
-	Vec3 target_direction;
+	float target_direction_angle;
 	Action current_action;
 
 	// settings

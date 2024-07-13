@@ -69,8 +69,8 @@ void construct_tile_triangles(Static_Model* model) {
 	Vertex_Info_Array* m = &model->mesh;
 
 	for (int i = 0; i < m->count; i++) {
-		if (m->data[i].position.y < 0.0f) {
-			m->data[i].position.y *= 4.0f;
+		if (m->data[i].position.z< 0.0f) {
+			m->data[i].position.z *= 4.0f;
 		}
 	}
 }
@@ -81,35 +81,33 @@ void construct_ramp_triangles(Static_Model* model, Orientation ramp_orientation)
 	construct_cube_triangles(model);
 	Vertex_Info_Array* m = &model->mesh;
 
-
-
 	for (int i = 0; i < m->count; i++) {
-		if (m->data[i].position.y < 0.0f) {
-			m->data[i].position.y *= 3.0f;
+		if (m->data[i].position.z < 0.0f) {
+			m->data[i].position.z *= 3.0f;
 		}
 
 		if (ramp_orientation == Orientation::NORTH)
 		{
-			if (m->data[i].position.y > 0.0f && m->data[i].position.z > 0.0f) {
-				m->data[i].position.y *= 2.0f;
+			if (m->data[i].position.z > 0.0f && m->data[i].position.y > 0.0f) {
+				m->data[i].position.z *= 2.0f;
 			}
 		}
 		if (ramp_orientation == Orientation::SOUTH)
 		{
-			if (m->data[i].position.y > 0.0f && m->data[i].position.z < 0.0f) {
-				m->data[i].position.y *= 2.0f;
+			if (m->data[i].position.z > 0.0f && m->data[i].position.y < 0.0f) {
+				m->data[i].position.z *= 2.0f;
 			}
 		}
 		if (ramp_orientation == Orientation::EAST)
 		{
-			if (m->data[i].position.y > 0.0f && m->data[i].position.x > 0.0f) {
-				m->data[i].position.y *= 2.0f;
+			if (m->data[i].position.z > 0.0f && m->data[i].position.x > 0.0f) {
+				m->data[i].position.z *= 2.0f;
 			}
 		}
 		if (ramp_orientation == Orientation::WEST)
 		{
-			if (m->data[i].position.y > 0.0f && m->data[i].position.x < 0.0f) {
-				m->data[i].position.y *= 2.0f;
+			if (m->data[i].position.z > 0.0f && m->data[i].position.x < 0.0f) {
+				m->data[i].position.z *= 2.0f;
 			}
 		}
 	}

@@ -9,7 +9,6 @@ void clamp(float* v, float lower, float upper) {
 
 	if (*v > upper) {
 		*v = upper;
-		return;
 	}
 }
 
@@ -21,7 +20,6 @@ void clamp(int* v, int lower, int upper) {
 
 	if (*v > upper) {
 		*v = upper;
-		return;
 	}
 }
 
@@ -55,6 +53,12 @@ void move_towards(Vec3* vec, const Vec3& target, float speed, float dt) {
 	move_towards(&vec->z, target.z, speed, dt);
 }
 
+
+float angle(const Vec2& a, const Vec2& b) {
+	float det = a.x * b.y - a.y * b.x;
+	float dot = a.x * b.x + a.x * b.y;
+	return atan2f(det, dot);
+}
 
 
 float dot(const Vec3& a, const Vec3& b) {
@@ -145,14 +149,32 @@ Vec4 Mat4::operator*(const Vec4& other) const {
 	Vec4 v = { 0 };
 
 	v.x = u11 * other.x + u12 * other.y + u13 * other.z + u14 * other.w;
-	v.y = u11 * other.x + u12 * other.y + u13 * other.z + u14 * other.w;
-	v.z = u11 * other.x + u12 * other.y + u13 * other.z + u14 * other.w;
-	v.w = u11 * other.x + u12 * other.y + u13 * other.z + u14 * other.w;
+	v.y = u21 * other.x + u22 * other.y + u23 * other.z + u24 * other.w;
+	v.z = u31 * other.x + u32 * other.y + u33 * other.z + u34 * other.w;
+	v.w = u41 * other.x + u42 * other.y + u43 * other.z + u44 * other.w;
 
 	return v;
 }
 
-Mat4 transpose(const Mat4& mat) {
+
+float matrix_det(const Mat4& m) {
+	// leibnitz fomula
+
+	float result =
+		m.u11 * m.u22 * m.u33 * m.u44 + m.u11 * m.u32 * m.u43 * m.u24 + m.u11 * m.u42 * m.u23 * m.u34 +
+		m.u21 * m.u12 * m.u43 * m.u34 + m.u21 * m.u32 * m.u13 * m.u44 + m.u21 * m.u42 * m.u33 * m.u14 +
+		m.u31 * m.u12 * m.u23 * m.u44 + m.u31 * m.u22 * m.u43 * m.u14 + m.u31 * m.u42 * m.u13 * m.u24 +
+		m.u41 * m.u12 * m.u33 * m.u24 + m.u41 * m.u22 * m.u13 * m.u34 + m.u41 * m.u32 * m.u23 * m.u14 -
+		m.u11 * m.u22 * m.u43 * m.u34 - m.u11 * m.u32 * m.u23 * m.u44 - m.u11 * m.u42 * m.u33 * m.u24 -
+		m.u21 * m.u12 * m.u33 * m.u44 - m.u21 * m.u32 * m.u43 * m.u14 - m.u21 * m.u42 * m.u13 * m.u34 -
+		m.u31 * m.u12 * m.u43 * m.u24 - m.u31 * m.u22 * m.u13 * m.u44 - m.u31 * m.u42 * m.u23 * m.u14 -
+		m.u41 * m.u12 * m.u23 * m.u34 - m.u41 * m.u22 * m.u33 * m.u14 - m.u41 * m.u32 * m.u13 * m.u24;
+
+	return result;
+}
+
+
+Mat4 matrix_transposed(const Mat4& mat) {
 	Mat4 m = { 0 };
 	m.u11 = mat.u11;
 	m.u12 = mat.u21;
@@ -174,6 +196,25 @@ Mat4 transpose(const Mat4& mat) {
 	m.u43 = mat.u34;
 	m.u44 = mat.u44;
 	return m;
+}
+
+Mat4 matrix_from_basis_vectors(Vec3 x, Vec3 y, Vec3 z) {
+	Mat4 result = { 0 };
+	result.u44 = 1.0f;
+
+	result.u11 = x.x;
+	result.u21 = x.y;
+	result.u31 = x.z;
+
+	result.u12 = y.x;
+	result.u22 = y.y;
+	result.u32 = y.z;
+
+	result.u13 = z.x;
+	result.u23 = z.y;
+	result.u33 = z.z;
+
+	return result;
 }
 
 
@@ -212,9 +253,9 @@ Mat4 matrix_translation(const Vec3& translation) {
 	m.u11 = 1.0f;
 	m.u22 = 1.0f;
 	m.u33 = 1.0f;
-	m.u41 = translation.x;
-	m.u42 = translation.y;
-	m.u43 = translation.z;
+	m.u14 = translation.x;
+	m.u24 = translation.y;
+	m.u34 = translation.z;
 	m.u44 = 1.0f;
 	return m;
 }
@@ -245,67 +286,35 @@ Mat4 matrix_unit() {
 
 
 Mat4 matrix_camera(Vec3 pos, Vec3 looking_direction, Vec3 up) {
+	return matrix_look_at(pos, pos + looking_direction, up);
+}
 
-	Vec3 right = cross(looking_direction, up);
+Mat4 matrix_look_at(Vec3 eye, Vec3 target, Vec3 up) {
 
-	normalize_or_z_axis(&looking_direction);
+	Vec3 forward = target - eye;
+	normalize_or_z_axis(&forward);
+	Vec3 side = cross(forward, up);
+	normalize_or_z_axis(&side);
+	up = cross(side, forward);
 	normalize_or_z_axis(&up);
-	normalize_or_z_axis(&right);
-
-	up = cross(right, looking_direction);
 
 	Mat4 result = { 0 };
 
-	result.u11 = -right.x;
-	result.u12 = -right.y;
-	result.u13 = -right.z;
+	result.u11 = side.x;
+	result.u12 = side.y;
+	result.u13 = side.z;
 
 	result.u21 = up.x;
 	result.u22 = up.y;
 	result.u23 = up.z;
 
-	result.u31 = -looking_direction.x;
-	result.u32 = -looking_direction.y;
-	result.u33 = -looking_direction.z;
+	result.u31 = -forward.x;
+	result.u32 = -forward.y;
+	result.u33 = -forward.z;
 
-	result.u41 = -dot(right, pos);
-	result.u42 = -dot(up, pos);
-	result.u43 = dot(looking_direction, pos);
-
-	result.u44 = 1.0f;
-	return result;
-}
-
-Mat4 matrix_look_at(const Vec3& camera, const Vec3& target, const Vec3& up_axis) {
-
-	Mat4 result = { 0 };
-
-	Vec3 eye = target - camera;
-	Vec3 forward = eye;
-	normalize_or_z_axis(&forward);
-
-	Vec3 real_up = up_axis - forward * dot(up_axis, forward); 
-
-	Vec3 right = cross(real_up, forward);
-	normalize_or_z_axis(&right);
-
-	Vec3 new_up = cross(forward, right);
-
-	result.u11 = right.x;
-	result.u21 = right.y;
-	result.u31 = right.z;
-	
-	result.u12 = new_up.x;
-	result.u22 = new_up.y;
-	result.u32 = new_up.z;
-	
-	result.u13 = forward.x;	
-	result.u23 = forward.y;
-	result.u33 = forward.z;
-	
-	result.u41 = -dot(right, eye);
-	result.u42 = -dot(new_up, eye);
-	result.u43 = -dot(forward, eye);
+	result.u14 = -dot(side, eye);
+	result.u24 = -dot(up, eye);
+	result.u34 = dot(forward, eye);
 
 	result.u44 = 1.0f;
 
@@ -326,8 +335,8 @@ Mat4 matrix_perspective(float vertical_fov, float aspect, float near, float far)
 	mat.u11 = near / right;
 	mat.u22 = near / top;
 	mat.u33 = -(near + far) * inv_dist;
-	mat.u34 = -1.0f; // w = -z
-	mat.u43 = -(2 * near * far) * inv_dist;
+	mat.u43 = -1.0f; // w = -z
+	mat.u34 = -(2 * near * far) * inv_dist;
 	mat.u44 = 0.0f;
 
 	return mat;
@@ -341,9 +350,9 @@ Mat4 matrix_perspective_orthographic(float left, float right, float top, float b
 	m.u22 = 2.0f / (top - bottom);
 	m.u33 = -2.0f / (far - near);
 	
-	m.u41 = -(right + left) / (right - left);
-	m.u42 = -(top + bottom) / (top - bottom);
-	m.u43 = -(far + near) / (far - near);
+	m.u14 = -(right + left) / (right - left);
+	m.u24 = -(top + bottom) / (top - bottom);
+	m.u34 = -(far + near) / (far - near);
 	
 	m.u44 = 1.0f;
 

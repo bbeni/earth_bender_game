@@ -86,21 +86,21 @@ void generate_floor(Floor* floor) {
 Vec4 color_from_tile_type(Tile_Type type) {
 	switch (type) {
 	case Tile_Type::AIR :
-		return Vec4{ 0.0, 0.0, 0.0, 0.0 };
+		return Vec4{ 0.0f, 0.0f, 0.0f, 0.0f };
 	case Tile_Type::GRASS:
-		return Vec4{ 0.0, 0.95, 0.1, 1.0 };
+		return Vec4{ 0.0f, 0.95f, 0.1f, 1.0f };
 	case Tile_Type::EARTH:
-		return Vec4{ 0.75, 0.5, 0.6, 1.0 };
+		return Vec4{ 0.75f, 0.5f, 0.6f, 1.0f };
 	case Tile_Type::SAND:
-		return Vec4{ 0.9, 0.9, 0.2, 1.0 };
+		return Vec4{ 0.9f, 0.9f, 0.2f, 1.0f };
 	case Tile_Type::STONE:
-		return Vec4{ 0.5, 0.5, 0.5, 1.0 };
+		return Vec4{ 0.5f, 0.5f, 0.5f, 1.0f };
 	case Tile_Type::LAVA:
-		return Vec4{ 0.99, 0.45, 0.1, 1.0 };
+		return Vec4{ 0.99f, 0.45f, 0.1f, 1.0f };
 	case Tile_Type::WATER:
-		return Vec4{ 0.0, 0.2, 0.7, 0.2 };
+		return Vec4{ 0.0f, 0.2f, 0.7f, 0.2f };
 	default:
-		return Vec4{ 1.0, 0, 0, 1.0 };
+		return Vec4{ 1.0f, 0.0f, 0.0f, 1.0f };
 	}
 }
 
@@ -147,7 +147,6 @@ void init_models_for_drawing() {
 
 void draw_floor(Floor* floor) {
 
-	//srand((int)(get_time()*0.1f ));
 
 	for (int i = 0; i < FLOOR_W; i++) {
 		for (int j = 0; j < FLOOR_D; j++) {
@@ -161,8 +160,9 @@ void draw_floor(Floor* floor) {
 			Vec4 color =color_from_tile_type(tile.type);
 			shader_uniform_set(shader_phong.gl_id, "object_color", Vec3{ color.x, color.y, color.z });
 
-			Mat4 translation = matrix_translation(Vec3{ 1.0f * i, elevation, 1.0f * j});
-			Mat4 model = translation;
+			Mat4 model_rotation = matrix_from_basis_vectors({1,0,0}, {0,1,0}, {0,0,1});
+			Mat4 translation = matrix_translation(Vec3{ 1.0f * i, 1.0f * j, elevation});
+			Mat4 model = matrix_from_basis_vectors({1, 0, 0}, {0, 1, 0}, {0, 0, 1}) * translation * model_rotation;
 			shader_uniform_set(shader_phong.gl_id, "model", model);
 
 			if (tile.type == Tile_Type::LAVA) {
@@ -192,31 +192,124 @@ void draw_floor(Floor* floor) {
 	}
 }
 
+void set_player_model_view_projection(Player* p);
+
+
 void draw_player(Player* p) {
 
 	Vec4 color = Vec4{0.90f, 0.8f, 0.5f, 1.0f};
 	
 	shader_uniform_set(shader_phong.gl_id, "object_color", Vec3{ color.x, color.y, color.z });
 
-
-	float floor_offset = 1.0f;
-
-	Mat4 translation = matrix_translation(Vec3{ p->pos.x, p->pos.y + floor_offset, p->pos.z });
-	Vec3 local_dir = p->direction;
-	local_dir.x = -local_dir.x;
-	local_dir.z = -local_dir.z;
-
-	printf("Dir %f %f %f\n", p->direction.x, p->direction.y, p->direction.z);
-
-	Mat4 rotation = matrix_camera(Vec3{ 0.0f, 0, 0 }, local_dir, Vec3{ 0.0f, 1.0f, 0.0f });
-	Mat4 model = rotation * translation;
-	
-	shader_uniform_set(shader_phong.gl_id, "model", model);
+	set_player_model_view_projection(p);
 
 	shader_draw_call(&player_model_info);
 }
 
-void draw_map_floor(Floor* floor, Player *p) {
+
+void set_player_model_view_projection(Player* p) {
+
+	// Model
+	
+	Mat4 model = matrix_translation(Vec3{ p->pos.x, p->pos.y, p->pos.z + 2.0f * 0.6f }) *
+				 matrix_rotation_euler(0.0f, 0.0f, -(p->direction_angle + M_PI * 1.25f)) *
+				 matrix_scale(0.6f);
+	shader_uniform_set(shader_phong.gl_id, "model", model);
+
+	// View
+	Vec3 camera_pos = p->pos + Vec3{ -4.0f, -4.0f, 10.0f };
+	Mat4 view = matrix_camera(camera_pos, {1.5f, 1.5f, -2.6f}, {0.0f, 0.0f, 1.0f});
+	float det = matrix_det(view);
+	shader_uniform_set(shader_phong.gl_id, "view", view);
+
+	// Projection
+	float near_plane = 0.01f;
+	float far_plane = 1000.0f;
+	Mat4 projection = matrix_perspective(p->fov, 1.4f, near_plane, far_plane);
+	shader_uniform_set(shader_phong.gl_id, "projection", projection);
+
+}
+
+
+void update_player(Player* p, Floor* floor) {
+	float frame_time = get_frame_time();
+
+	/*
+	if (p->desired_direction.x != p->direction.x || p->desired_direction.y != p->direction.y) {
+		move_towards(&p->direction, p->desired_direction, p->turn_speed, frame_time);
+		normalize(&p->direction);
+	}*/
+
+	float angle = p->direction_angle;
+	float target_angle = p->target_direction_angle;
+
+
+	if (p->direction_angle != p->target_direction_angle) {
+		p->current_action = Action::TURNING;
+		move_towards(&p->direction_angle, p->target_direction_angle, p->turn_speed, frame_time);
+	}
+
+	Vec3 direction = Vec3{ sinf(angle + M_PI * 0.25f), cosf(angle + M_PI * 0.25f) };
+
+
+	if (p->current_action == Action::WALKING) {
+		//move_towards(&p->fov, 72.0f, 90.0f, frame_time);
+	} else {
+		move_towards(&p->fov, 60.0f, 170.0f, frame_time);
+	}
+
+	p->velocity = direction * p->walk_speed;
+
+	Vec3 desired_pos = p->pos;
+	if (p->current_action == Action::WALKING) {
+		desired_pos = desired_pos + p->velocity * (float)get_frame_time();
+	}
+
+	Tile* desired_tile = NULL;
+	{
+		int i = (int)floorf(desired_pos.x + 0.5f);
+		int j = (int)floorf(desired_pos.y + 0.5f);
+
+		if ((i >= 0 && i < FLOOR_W) && (j >= 0 && j < FLOOR_D)) {
+			desired_tile = &floor->tiles[i][j];
+		}
+	}
+
+
+	if (desired_tile != NULL && !desired_tile->block_walking) {
+		p->pos = desired_pos;
+		p->pos.z = 0.5f * desired_tile->height;
+
+		if (desired_tile->ramp_direction != Orientation::NO_ORIENTATION) {
+
+			float x = p->pos.x - floorf(p->pos.x);
+			float y = p->pos.y - floorf(p->pos.y);
+
+			switch (desired_tile->ramp_direction)
+			{
+			case Orientation::EAST:
+				p->pos.z += lerp(-0.5f, 0.0f, x);
+				break;
+			case Orientation::WEST:
+				p->pos.z += lerp(0.0f, -0.5f, x);
+				break;
+			case Orientation::NORTH:
+				p->pos.z += lerp(-0.5f, 0.0f, y);
+				break;
+			case Orientation::SOUTH:
+				p->pos.z += lerp(0.0f, -0.5f, y);
+				break;
+			default:
+				break;
+			}
+		}
+
+	}
+}
+
+
+
+void draw_map_floor(Floor* floor, Player* p) {
 
 	float offset = -1.0f; // rendering left bottom corner is (-1, -1)
 
@@ -229,7 +322,7 @@ void draw_map_floor(Floor* floor, Player *p) {
 	float x0 = width * 2.5f;
 	float y0 = height * 2.5f;
 
-	Vec2 player_pos = { x0 + offset + (width + pad_x) * p->pos.x + 0.5f * width, y0 + offset + (height + pad_y) * p->pos.z + 0.5f * height };
+	Vec2 player_pos = { x0 + offset + (width + pad_x) * p->pos.x + 0.5f * width, y0 + offset + (height + pad_y) * p->pos.y + 0.5f * height };
 
 	immediate_quad(player_pos, Vec2{ width, height }, Vec4{ 1.0f, 0.0f, 0.0f, 1.0f });
 
@@ -237,9 +330,9 @@ void draw_map_floor(Floor* floor, Player *p) {
 
 	for (int i = 0; i < FLOOR_W; i++) {
 		for (int j = 0; j < FLOOR_D; j++) {
-			
+
 			pos = { x0 + offset + (width + pad_x) * i + 0.5f * width, y0 + offset + (height + pad_y) * j + 0.5f * height };
-			
+
 			//immediate_quad(pos, size, color_from_tile_type(floor->tiles[i][j].type));
 
 			Vec4 c1 = color_from_tile_type(floor->tiles[i][j].type);
@@ -268,104 +361,6 @@ void draw_map_floor(Floor* floor, Player *p) {
 
 		}
 	}
-	immediate_quad(offset, offset, (width + pad_x) * FLOOR_W - pad_x + 2*x0, (height + pad_y) * FLOOR_D - pad_y + 2*y0, Vec4{ 0, 0, 0, 1 });
+	immediate_quad(offset, offset, (width + pad_x) * FLOOR_W - pad_x + 2 * x0, (height + pad_y) * FLOOR_D - pad_y + 2 * y0, Vec4{ 0, 0, 0, 1 });
 
-}
-
-
-void update_player(Player* p, Floor* floor) {
-	float frame_time = get_frame_time();
-
-	/*
-	if (p->desired_direction.x != p->direction.x || p->desired_direction.y != p->direction.y) {
-		move_towards(&p->direction, p->desired_direction, p->turn_speed, frame_time);
-		normalize(&p->direction);
-	}*/
-	normalize_or_z_axis(&p->direction);
-	normalize_or_z_axis(&p->target_direction);
-
-	if (dot(p->target_direction, p->direction) < 0.9999f) {
-		p->current_action = Action::TURNING;
-		move_towards(&p->direction, p->target_direction, p->turn_speed, frame_time);
-		normalize_or_z_axis(&p->target_direction);
-		normalize_or_z_axis(&p->direction);
-	}
-
-
-	if (p->current_action == Action::WALKING) {
-		//move_towards(&p->fov, 72.0f, 90.0f, frame_time);
-	} else {
-		move_towards(&p->fov, 70.0f, 170.0f, frame_time);
-	}
-
-	float near_plane = 0.01f;
-	float far_plane = 1000.0f;
-	Mat4 projection = matrix_perspective(p->fov, 1.4f, near_plane, far_plane);
-	shader_uniform_set(shader_phong.gl_id, "projection", projection);
-
-	p->velocity = p->target_direction * p->walk_speed;
-
-	Vec3 desired_pos = p->pos;
-	if (p->current_action == Action::WALKING) {
-		desired_pos = desired_pos + p->velocity * get_frame_time();
-	}
-
-	Tile* desired_tile = NULL;
-	{
-		int i = (int)floorf(desired_pos.x + 0.5f);
-		int j = (int)floorf(desired_pos.z + 0.5f);
-
-		if ((i >= 0 && i < FLOOR_W) && (j >= 0 && j < FLOOR_D)) {
-			desired_tile = &floor->tiles[i][j];
-		}
-	}
-
-
-	if (desired_tile != NULL && !desired_tile->block_walking) {
-		p->pos = desired_pos;
-		p->pos.y = 0.5f * desired_tile->height;
-
-		if (desired_tile->ramp_direction != Orientation::NO_ORIENTATION) {
-
-			float x = p->pos.x - floorf(p->pos.x);
-			float z = p->pos.z - floorf(p->pos.z);
-
-			switch (desired_tile->ramp_direction)
-			{
-			case Orientation::EAST:
-				p->pos.y += lerp(-0.5f, 0.0f, x);
-				break;
-			case Orientation::WEST:
-				p->pos.y += lerp(0.0f, -0.5f, x);
-				break;
-			case Orientation::NORTH:
-				p->pos.y += lerp(-0.5f, 0.0f, z);
-				break;
-			case Orientation::SOUTH:
-				p->pos.y += lerp(0.0f, -0.5f, z);
-				break;
-			default:
-				break;
-			}
-		}
-
-	}
-
-	printf("Pos: %f %f\n", p->pos.x, p->pos.z);
-
-	//p->pos = Vec3{ 0,0,0 };
-
-
-	Vec3 camera_direction = Vec3{ 0.0f, -1.0f, 1.4f };
-	normalize_or_z_axis(&camera_direction);
-
-	Vec3 camera_position = Vec3{ 0.0f, 8.0f, -6.0f };
-
-	camera_position.x = camera_position.x - p->pos.x;   // TODO: fix x-axis is flipped. Also, we should prbably use z componoent for elevation. 
-	camera_position.y = camera_position.y + p->pos.y;
-	camera_position.z = camera_position.z + p->pos.z;
-
-	//Mat4 view = matrix_camera(camera_position, camera_direction, Vec3{ 0.0f, 1.0f * cosf(get_time()), 1.0f * sinf(get_time())});
-	Mat4 view = matrix_camera(camera_position, camera_direction, Vec3{ 0.0f, 0.0f, 1.0f});
-	shader_uniform_set(shader_phong.gl_id, "view", view);
 }
