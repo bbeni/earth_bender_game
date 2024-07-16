@@ -39,6 +39,9 @@
     <ClCompile Include="resource_loading.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="shaders.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="input_and_window.hpp">
@@ -71,5 +74,8 @@
     <ClInclude Include="resource_loading.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="shaders\material_brdf.glsl" />
   </ItemGroup>
 </Project>

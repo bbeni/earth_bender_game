@@ -145,7 +145,7 @@ Vertex_Info_Array load_mesh_bada_file(const char* file_path) {
 	// TODO: use read file directly
 	char* data;
 	int size;
-	if (!load_resource(file_path, &size, (void**)&data)) {
+	if (!load_resource(file_path, &size, &data)) {
 		exit(1);
 	}
 

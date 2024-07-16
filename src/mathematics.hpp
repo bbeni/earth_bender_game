@@ -22,21 +22,30 @@ typedef struct Vec3 {
 
 typedef struct Vec2 {
 	float x, y;
+	Vec2 operator+(const Vec2& other) const;
+	Vec2 operator-(const Vec2& other) const;
+	Vec2 operator*(float f) const;
+	bool operator!=(const Vec2& other) const;
+	Vec2& operator+=(const Vec2& other);
+	Vec2& operator-=(const Vec2& other);
 } Vec2;
 
 void clamp(float* v, float lower, float upper);
 void clamp(int* v, int lower, int upper);
 float lerp(float lower, float upper, float t);
 void move_towards(float* x, float target, float speed, float dt);
-
 void move_towards(Vec3* vec, const Vec3& target, float speed, float dt);
+
+// move towards the closer angle mapped from -pi to pi
+void move_towards_on_circle(float* angle, float target,  float speed, float dt);
 
 float dot(const Vec3& a, const Vec3& b);
 Vec3 cross(const Vec3& a, const Vec3& b);
 void normalize_or_z_axis(Vec3* v);
 
 // -pi to pi
-float angle(const Vec2& a, const Vec2& b);
+float angle_between(const Vec2& a, const Vec2& b);
+void normalize_or_y_axis(Vec2* v);
 
 
 typedef struct Mat4 {

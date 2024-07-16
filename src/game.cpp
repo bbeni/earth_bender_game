@@ -197,27 +197,29 @@ void set_player_model_view_projection(Player* p);
 
 void draw_player(Player* p) {
 
-	Vec4 color = Vec4{0.90f, 0.8f, 0.5f, 1.0f};
-	
+	Vec4 color = Vec4{0.8f, 0.8f, 0.5f, 1.0f};
+
 	shader_uniform_set(shader_phong.gl_id, "object_color", Vec3{ color.x, color.y, color.z });
+	shader_uniform_set(shader_phong.gl_id, "ambient_strength", 1.0f);
 
 	set_player_model_view_projection(p);
 
 	shader_draw_call(&player_model_info);
+	shader_uniform_set(shader_phong.gl_id, "ambient_strength", 0.25f);
 }
 
 
 void set_player_model_view_projection(Player* p) {
 
 	// Model
-	
-	Mat4 model = matrix_translation(Vec3{ p->pos.x, p->pos.y, p->pos.z + 2.0f * 0.6f }) *
-				 matrix_rotation_euler(0.0f, 0.0f, -(p->direction_angle + M_PI * 1.25f)) *
-				 matrix_scale(0.6f);
+
+	Mat4 model = matrix_translation(Vec3{ p->pos.x, p->pos.y, p->pos.z + 0.5f }) *
+		matrix_rotation_euler(0.0f, 0.0f, (-p->direction_angle + M_PI)) *
+		matrix_scale(0.8f);
 	shader_uniform_set(shader_phong.gl_id, "model", model);
 
 	// View
-	Vec3 camera_pos = p->pos + Vec3{ -4.0f, -4.0f, 10.0f };
+	Vec3 camera_pos = Vec3{ p->pos.x, p->pos.y, 0.0f } + Vec3{	 -4.0f, -4.0f, 10.0f };
 	Mat4 view = matrix_camera(camera_pos, {1.5f, 1.5f, -2.6f}, {0.0f, 0.0f, 1.0f});
 	float det = matrix_det(view);
 	shader_uniform_set(shader_phong.gl_id, "view", view);
@@ -246,64 +248,64 @@ void update_player(Player* p, Floor* floor) {
 
 	if (p->direction_angle != p->target_direction_angle) {
 		p->current_action = Action::TURNING;
-		move_towards(&p->direction_angle, p->target_direction_angle, p->turn_speed, frame_time);
+		move_towards_on_circle(&p->direction_angle, p->target_direction_angle, p->turn_speed, frame_time);
 	}
 
-	Vec3 direction = Vec3{ sinf(angle + M_PI * 0.25f), cosf(angle + M_PI * 0.25f) };
+	Vec3 direction = Vec3{ sinf(angle), cosf(angle) };
 
 
 	if (p->current_action == Action::WALKING) {
 		//move_towards(&p->fov, 72.0f, 90.0f, frame_time);
 	} else {
-		move_towards(&p->fov, 60.0f, 170.0f, frame_time);
+		move_towards(&p->fov, 60.0f, 70.0f, frame_time);
 	}
 
 	p->velocity = direction * p->walk_speed;
 
-	Vec3 desired_pos = p->pos;
 	if (p->current_action == Action::WALKING) {
-		desired_pos = desired_pos + p->velocity * (float)get_frame_time();
-	}
+		Vec3 desired_pos = p->pos + p->velocity * (float)get_frame_time();
 
-	Tile* desired_tile = NULL;
-	{
-		int i = (int)floorf(desired_pos.x + 0.5f);
-		int j = (int)floorf(desired_pos.y + 0.5f);
+		Tile* desired_tile = NULL;
+		{
+			int i = (int)floorf(desired_pos.x + 0.5f);
+			int j = (int)floorf(desired_pos.y + 0.5f);
 
-		if ((i >= 0 && i < FLOOR_W) && (j >= 0 && j < FLOOR_D)) {
-			desired_tile = &floor->tiles[i][j];
-		}
-	}
-
-
-	if (desired_tile != NULL && !desired_tile->block_walking) {
-		p->pos = desired_pos;
-		p->pos.z = 0.5f * desired_tile->height;
-
-		if (desired_tile->ramp_direction != Orientation::NO_ORIENTATION) {
-
-			float x = p->pos.x - floorf(p->pos.x);
-			float y = p->pos.y - floorf(p->pos.y);
-
-			switch (desired_tile->ramp_direction)
-			{
-			case Orientation::EAST:
-				p->pos.z += lerp(-0.5f, 0.0f, x);
-				break;
-			case Orientation::WEST:
-				p->pos.z += lerp(0.0f, -0.5f, x);
-				break;
-			case Orientation::NORTH:
-				p->pos.z += lerp(-0.5f, 0.0f, y);
-				break;
-			case Orientation::SOUTH:
-				p->pos.z += lerp(0.0f, -0.5f, y);
-				break;
-			default:
-				break;
+			if ((i >= 0 && i < FLOOR_W) && (j >= 0 && j < FLOOR_D)) {
+				desired_tile = &floor->tiles[i][j];
+			}
+			else {
+				i = i;
 			}
 		}
 
+		if (desired_tile != NULL && !desired_tile->block_walking) {
+			p->pos = desired_pos;
+			p->pos.z = 0.5f * desired_tile->height;
+
+			if (desired_tile->ramp_direction != Orientation::NO_ORIENTATION && false) {
+				
+				float x = p->pos.x - floorf(p->pos.x);
+				float y = p->pos.y - floorf(p->pos.y);
+
+				switch (desired_tile->ramp_direction)
+				{
+				case Orientation::EAST:
+					p->pos.z += lerp(-0.5f, 0.0f, x);
+					break;
+				case Orientation::WEST:
+					p->pos.z += lerp(0.0f, -0.5f, x);
+					break;
+				case Orientation::NORTH:
+					p->pos.z += lerp(-0.5f, 0.0f, y);
+					break;
+				case Orientation::SOUTH:
+					p->pos.z += lerp(0.0f, -0.5f, y);
+					break;
+				default:
+					break;
+				}
+			}
+		}
 	}
 }
 

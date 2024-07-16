@@ -2,7 +2,6 @@
 
 #include "rendering_backend.hpp"
 
-#define SHADERS_IMPLEMENTATION
 #include "shaders.hpp"
 
 //#include <GL/gl.h>

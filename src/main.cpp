@@ -41,29 +41,38 @@ int main() {
 
         player.current_action = Action::IDLE;
 
-        player.target_direction_angle = 0.0f;
+        Vec2 direction = { 0 };
 
+        
         if ((get_key_flags_state(VK_UP) | get_key_flags_state((uint32_t)Key_Code::W)) & Key_State_Flags::DOWN ) {
             player.current_action = Action::WALKING;
-            // this is foward
+            direction += Vec2{ 1, 1 };
         }
+
         if ((get_key_flags_state(VK_DOWN) | get_key_flags_state((uint32_t)Key_Code::S)) & Key_State_Flags::DOWN) {
             player.current_action = Action::WALKING;
-            player.target_direction_angle += M_PI;
-
+            direction += Vec2{ -1, -1 };
         }
+
         if ((get_key_flags_state(VK_RIGHT) | get_key_flags_state((uint32_t)Key_Code::D)) & Key_State_Flags::DOWN) {
             player.current_action = Action::WALKING;
-            player.target_direction_angle += M_PI/2;
-        }
-        if ((get_key_flags_state(VK_LEFT) | get_key_flags_state((uint32_t)Key_Code::A)) & Key_State_Flags::DOWN) {
-            player.current_action = Action::WALKING;
-            player.target_direction_angle -= M_PI/2;
+            direction += Vec2{ 1, -1};
         }
 
-        if (player.target_direction_angle > M_PI) {
-            player.target_direction_angle -= 2*M_PI;
+        if ((get_key_flags_state(VK_LEFT) | get_key_flags_state((uint32_t)Key_Code::A)) & Key_State_Flags::DOWN) {
+            player.current_action = Action::WALKING;
+            direction += Vec2{ -1, 1 };
         }
+
+        normalize_or_y_axis(&direction);
+
+        printf("%d current_action\n", player.current_action);
+
+        if (player.current_action == Action::WALKING) player.target_direction_angle = angle_between(direction, Vec2{0, 1});
+
+        printf("Direction Angle: %f\n", player.target_direction_angle);
+
+        //while (player.target_direction_angle > M_PI)  player.target_direction_angle -= 2*M_PI;
 
 
         for (int i = 0; i < events_this_frame.count; i++) {

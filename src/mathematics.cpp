@@ -1,5 +1,6 @@
 #include "mathematics.hpp"
 #include <math.h>
+#include <cassert>
 
 void clamp(float* v, float lower, float upper) {
 	if (*v < lower) {
@@ -53,11 +54,45 @@ void move_towards(Vec3* vec, const Vec3& target, float speed, float dt) {
 	move_towards(&vec->z, target.z, speed, dt);
 }
 
+void move_towards_on_circle(float* angle, float target,  float speed, float dt) {
+	*angle = fmod(*angle + M_PI, 2 * M_PI) - M_PI; // map to [-pi, pi)
+	if (*angle >= M_PI) {
+		*angle -= 2 * M_PI;
+	}
+	
+	if (*angle < -M_PI) {
+		*angle += 2 * M_PI;
+	}
 
-float angle(const Vec2& a, const Vec2& b) {
+	assert(*angle < M_PI);
+	assert(*angle >= -M_PI);
+	
+	if (*angle + M_PI < target) {
+		move_towards(angle, target - 2*M_PI, speed, dt);
+	} else if (*angle - M_PI > target) {
+		move_towards(angle, target + 2*M_PI, speed, dt);
+	}
+	else {
+		move_towards(angle, target, speed, dt);
+	}
+} 
+
+
+float angle_between(const Vec2& a, const Vec2& b) {
 	float det = a.x * b.y - a.y * b.x;
-	float dot = a.x * b.x + a.x * b.y;
+	float dot = a.x * b.x + a.y * b.y;
 	return atan2f(det, dot);
+}
+
+void normalize_or_y_axis(Vec2* v) {
+	float denom = sqrtf(v->x * v->x + v->y * v->y);
+	if (denom == 0.0f) {
+		*v = Vec2{ 0.0f, 1.0f };
+		return;
+	}
+	float factor = 1 / denom;
+	v->x *= factor;
+	v->y *= factor;
 }
 
 
@@ -109,6 +144,46 @@ Vec3 Vec3::operator*(float f) const {
 bool Vec3::operator!=(const Vec3& other) const {
 	return x != other.x || y != other.y || z != other.z;
 }
+
+
+
+Vec2 Vec2::operator+(const Vec2& other) const {
+	Vec2 v = {
+		x + other.x,
+		y + other.y,
+	};
+	return v;
+}
+
+Vec2 Vec2::operator-(const Vec2& other) const {
+	Vec2 v = {
+		x - other.x,
+		y - other.y,
+	};
+	return v;
+}
+
+Vec2& Vec2::operator+=(const Vec2& other) {
+	x += other.x;
+	y += other.y;
+	return *this;
+}
+
+Vec2& Vec2::operator-=(const Vec2& other) {
+	x -= other.x;
+	y -= other.y;
+	return *this;
+}
+
+
+Vec2 Vec2::operator*(float f) const {
+	return Vec2{ f * x, f * y};
+}
+
+bool Vec2::operator!=(const Vec2& other) const {
+	return x != other.x || y != other.y;
+}
+
 
 
 const Mat4 mat4_unit =
