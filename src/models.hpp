@@ -20,6 +20,12 @@ typedef struct Model {
 	Vertex_Info_Array mesh;
 } Model;
 
+#define MAX_FRAMES_PER_ANIMATION 128
+typedef struct Animated_Model {
+	size_t count;
+	Vertex_Info_Array meshes[MAX_FRAMES_PER_ANIMATION];
+} Animated_Model;
+
 enum Orientation {
 	NO_ORIENTATION = 0,
 	NORTH,
@@ -36,3 +42,6 @@ void construct_normals(Model* model);
 
 // loading function for my own 3d model format
 Vertex_Info_Array load_mesh_bada_file(const char* file_path);
+
+// @Temporary
+Animated_Model load_anim_bada_file(const char* file_path);

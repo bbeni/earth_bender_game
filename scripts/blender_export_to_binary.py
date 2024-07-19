@@ -1,5 +1,5 @@
 """
-A simple Mesh file format 
+A simple Mesh and Animation file format 
 
 Copyright 2024 Benjamin Froelich 
 
@@ -29,9 +29,12 @@ import bmesh
 
 
 FILE_MAGIC = b'\xba\xda\xba\xda'
-VERSION_NUMBER = 1
+VERSION_NUMBER = 2
 
-def write_some_data(context, filepath, convert_to_tris, world_space, rot_x90):
+class Start_Frame_Bigger_Than_End_Frame_Error(Exception):
+    pass
+
+def write_some_data(context, filepath, convert_to_tris, world_space, rot_x90, frames_start, frames_end):
         
     if len(bpy.context.selected_objects) == 0:
         raise ValueError("No objects selected! Select the objects you want to export first\nHave a nice Day <3 :)")
@@ -59,43 +62,54 @@ def write_some_data(context, filepath, convert_to_tris, world_space, rot_x90):
     if rot_x90:
         mat_x90 = mathutils.Matrix.Rotation(-math.pi/2, 4, 'X')
         obj.data.transform(mat_x90)
-    
-    me = obj.data
-    bm = bmesh.new()   # create an empty BMesh
-    bm.from_mesh(me)   # fill it in from a Mesh
+        
+    if frames_start > frames_end:
+        raise Start_Frame_Bigger_Than_End_Frame_Error
 
-    faces = list(bm.faces)
-    uv_lay = bm.loops.layers.uv.active
+    n_frames = frames_end - frames_start + 1
+    
+    scene = bpy.context.scene
 
     #
-    # Example using triangle faces
+    # Example
     # one letter coressponds to one byte here
     #
 
     # xxxx filemagic
     # iiii version number
-    # iiii faces count
-    # b___ do we only have tris?
-    # per face we have:
-    #   iiii material index
-    #   ffff x normal
-    #   ffff y normal
-    #   ffff z normal
-    #   ffff x1
-    #   ffff y1
-    #   ffff z1
-    #   ffff x2
-    #   ffff y2
-    #   ffff z2
-    #   ffff x3
-    #   ffff y3
-    #   ffff z3
-    #   ffff u1
-    #   ffff v1
-    #   ffff u2
-    #   ffff v2
-    #   ffff u3
-    #   ffff v3
+    
+    # b___ do we only have tris? flags
+    
+    # .... reserved for more flags
+    # .... reserved for more flags
+    # .... reserved for more flags
+    # .... reserved for more flags
+    
+    # iiii frame count (is 1 for no animation)
+    # iiii faces count per frame (needs be constant over all frames)
+    
+    # per frame we have:
+    #   per face we have:
+    #     iiii material index
+    #     ffff x normal
+    #     ffff y normal
+    #     ffff z normal
+    #     ffff x1
+    #     ffff y1
+    #     ffff z1
+    #     ffff x2
+    #     ffff y2
+    #     ffff z2
+    #     ffff x3
+    #     ffff y3
+    #     ffff z3
+    #     ffff u1
+    #     ffff v1
+    #     ffff u2
+    #     ffff v2
+    #     ffff u3
+    #     ffff v3
+    
     # xxxx filemagic again
 
     with open(filepath, 'wb') as f:
@@ -107,37 +121,68 @@ def write_some_data(context, filepath, convert_to_tris, world_space, rot_x90):
         # File magic
         f.write(FILE_MAGIC)
         f.write(struct.pack('<i', VERSION_NUMBER))
-
-        # amount of faces we have to prealocate when we load it
-        f.write(struct.pack('<i', len(faces)))
-        print("Have (", len(faces), ") faces.")
-
-        # did we convert to tris?
+        
+        # did we convert to tris? (one flag for now)
         f.write(struct.pack('<bxxx', convert_to_tris))
 
-        for face in faces:
+        # reserved for other flags etc..
+        f.write(struct.pack('<i', 0))
+        f.write(struct.pack('<i', 0))
+        f.write(struct.pack('<i', 0))
+        f.write(struct.pack('<i', 0))
 
-            loops = list(face.loops)
+        # amount of frames (1 if we have no animation)
+        f.write(struct.pack('<i', n_frames))
 
-            if convert_to_tris:
-                assert len(loops) == 3
 
-            # write material index
-            f.write(struct.pack("<i", face.material_index))
+        # just take the number of faces we have and assume its not 
+        # gonna change!
+        me = obj.data
+        bm = bmesh.new()
+        bm.from_mesh(me)
+        faces = list(bm.faces)
+        len_faces = len(faces)
 
-            # we write normal x, y, z
-            f.write(struct.pack("<fff", *face.normal))
-            print("Normal: ", face.normal)          
+        # write amount of faces per frame needs to be constant
+        f.write(struct.pack('<i', len_faces))
+                
+        # per frame do this        
+        for current_frame in range(frames_start, frames_end + 1):
+            
+            scene.frame_set(current_frame)
+            bpy.context.view_layer.update()  # Make sure all transforms are applied
+            
+            me = obj.evaluated_get(bpy.context.evaluated_depsgraph_get()).to_mesh()
+            bm = bmesh.new()   # create an empty BMesh
+            bm.from_mesh(me)   # fill it in from a Mesh
 
-            # positions x1, y1, z1, x2, y2, y2, ...
-            for i in range(len(loops)):
-                f.write(struct.pack("<fff", *loops[i].vert.co[:]))
-                print("Vert: ", loops[i].vert.co)
+            faces = list(bm.faces)
+            assert(len(faces) == len_faces) # make sure it didnt change
+            
+            uv_lay = bm.loops.layers.uv.active            
+            
+            for face in faces:
+                loops = list(face.loops)
 
-            # uv coords u1, v1,     u2, v2,     ...
-            for i in range(len(loops)):
-                f.write(struct.pack("<ff", *loops[i][uv_lay].uv))        
-                print("Vert: ", loops[i][uv_lay].uv)
+                if convert_to_tris:
+                    assert len(loops) == 3
+
+                # write material index
+                f.write(struct.pack("<i", face.material_index))
+
+                # we write normal x, y, z
+                f.write(struct.pack("<fff", *face.normal))
+                #print("Normal: ", face.normal)          
+
+                # positions x1, y1, z1, x2, y2, y2, ...
+                for i in range(len(loops)):
+                    f.write(struct.pack("<fff", *loops[i].vert.co[:]))
+                    #print("Vert: ", loops[i].vert.co)
+
+                # uv coords u1, v1,     u2, v2,     ...
+                for i in range(len(loops)):
+                    f.write(struct.pack("<ff", *loops[i][uv_lay].uv))        
+                    #print("Vert: ", loops[i][uv_lay].uv)
 
         # File identifier again for signifing we won
         f.write(FILE_MAGIC)
@@ -148,8 +193,9 @@ def write_some_data(context, filepath, convert_to_tris, world_space, rot_x90):
     return {'FINISHED'}
 
 from bpy_extras.io_utils import ExportHelper
-from bpy.props import StringProperty, BoolProperty, EnumProperty
-from bpy.types import Operator
+from bpy.props import StringProperty, BoolProperty, IntVectorProperty, IntProperty
+from bpy.types import Operator     
+   
 
 class ExportBadaFile(Operator, ExportHelper):
     """Export selected mesh(es) to .bada file (binary)."""
@@ -180,13 +226,30 @@ class ExportBadaFile(Operator, ExportHelper):
     )
     
     rotate90: BoolProperty(
-        name="Rotate X 90",
+        name="Rotate x by 90 degrees",
         description="Rotate it by 90 degrees around X-axis",
         default=False
-    )    
+    )
+
+    frames_start: IntProperty(
+        name="start frame",
+        description="set start = end for no animation",
+        default=bpy.context.scene.frame_start,
+        min=bpy.context.scene.frame_start,
+        max=bpy.context.scene.frame_end,
+    )
+
+    frames_end: IntProperty(
+        name="end frame",
+        description="set start = end for no animation",
+        default=bpy.context.scene.frame_end,
+        min=bpy.context.scene.frame_start,
+        max=bpy.context.scene.frame_end,
+    )
+    
 
     def execute(self, context):
-        return write_some_data(context, self.filepath, self.convert_tris, self.to_world_space, self.rotate90)
+        return write_some_data(context, self.filepath, self.convert_tris, self.to_world_space, self.rotate90, self.frames_start, self.frames_end)
 
 
 # Only needed if you want to add into a dynamic menu

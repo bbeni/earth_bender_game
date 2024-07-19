@@ -164,6 +164,9 @@ void shader_uniform_set(GLuint shader_id, const char* value_name, const float va
 	check_gl_error_and_fail("end - shader_uniform_set(float)");
 }
 
+// @Todo use world struct or something
+// something is wrong anyway...
+Vec3 light_direction = { 4.0f, -5.5f, -5.5f };
 
 void init_phong_uniforms() {
 	glUseProgram(shader_phong.gl_id);
@@ -171,11 +174,11 @@ void init_phong_uniforms() {
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 
-	Vec3 light_pos = { 22.5f, 2.5f, 8.0f };
 	Vec3 light_color = { 0.95f, 0.8f, 0.7f };
-	Vec3 object_color = { 0.7f, 0.9f, 0.3f };
-	float ambient_strength = 0.25f;
+	float light_strength = 0.12f;
 
+	Vec3 object_color = { 0.7f, 0.9f, 0.3f };
+	
 	float time = 0.0f;
 
 	Mat4 view = matrix_camera(Vec3{ -3.0f, 3.0f, -3.0f }, Vec3{ 1.0f, 0.0f, 1.0f}, Vec3{0.0f, 1.0f, 0.0f});
@@ -194,9 +197,10 @@ void init_phong_uniforms() {
 	shader_uniform_set(shader_phong.gl_id, "projection", projection);
 	shader_uniform_set(shader_phong.gl_id, "model", model);
 	shader_uniform_set(shader_phong.gl_id, "view", view);
-	shader_uniform_set(shader_phong.gl_id, "light_position", light_pos);
+	shader_uniform_set(shader_phong.gl_id, "light_direction", light_direction);
 	shader_uniform_set(shader_phong.gl_id, "light_color", light_color);
-	shader_uniform_set(shader_phong.gl_id, "ambient_strength", ambient_strength);
+	shader_uniform_set(shader_phong.gl_id, "light_strength", light_strength);
+	//shader_uniform_set(shader_phong.gl_id, "ambient_strength", ambient_strength);
 	shader_uniform_set(shader_phong.gl_id, "object_color", object_color);
 
 }
@@ -208,9 +212,8 @@ void init_brdf_uniforms() {
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 
-	Vec3 light_direction = { 4.0f, -2.5f, -4.0f };
 	Vec3 light_color = { 0.95f, 0.8f, 0.7f };
-	float light_strength = 10.0f;
+	float light_strength = 5.0f;
 
 	Vec3 object_color = { 0.7f, 0.9f, 0.3f };
 	float ambient_strength = 0.0f;

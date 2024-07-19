@@ -381,6 +381,9 @@ GLuint load_texture(char* texture_path) {
 	return texture_id;
 }
 
+
+
+
 // send data to shader
 void shader_init_model(Material_Shader* shader, Model_Info_For_Shading *model_info) {
 
@@ -438,13 +441,74 @@ void shader_init_model(Material_Shader* shader, Model_Info_For_Shading *model_in
 
 }
 
+
+// @CopyPasta from above
+// send data to shader for animated model
+void shader_init_animated_model(Material_Shader* shader, Animated_Model_Info_For_Shading* model_info) {
+
+	glUseProgram(shader->gl_id);
+	check_gl_error_and_fail("after glUseProgram()");
+
+	if (model_info->texture_color_path) {
+		model_info->shader_texture_color_id = load_texture(model_info->texture_color_path);
+	}
+
+	size_t vert_count = model_info->model.meshes[0].count; // we have the same number for all meshes for now
+	if (vert_count == 0) {
+		return;
+	}
+
+	if (!model_info->initialized) {
+		model_info->initialized = true;
+		model_info->shader = shader;
+
+		glGenVertexArrays(model_info->model.count, model_info->shader_vao);
+		glBindVertexArray(model_info->shader_vao[0]);
+		glGenBuffers(model_info->model.count, model_info->shader_vbo);
+	}
+
+	for (int i = 0; i < model_info->model.count; i++) {
+
+		Vertex_Info* vertex_data = model_info->model.meshes[i].data;
+
+		GLuint vao = model_info->shader_vao[i];
+		GLuint vbo = model_info->shader_vbo[i];
+
+		glBindVertexArray(vao);
+		glBindBuffer(GL_ARRAY_BUFFER, vbo);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex_Info) * vert_count, vertex_data, GL_DYNAMIC_DRAW);
+
+		GLsizei stride = sizeof(Vertex_Info);
+
+		check_gl_error_and_fail("start - shader_init_model locations");
+
+		glEnableVertexAttribArray(shader->position_location);
+		glVertexAttribPointer(shader->position_location, 3, GL_FLOAT, GL_FALSE, stride, (GLvoid*)0);
+
+		check_gl_error_and_fail("mid1 - shader_init_model locations");
+
+		glEnableVertexAttribArray(shader->normal_location);
+		glVertexAttribPointer(shader->normal_location, 3, GL_FLOAT, GL_FALSE, stride, (GLvoid*)(3 * sizeof(GLfloat)));
+
+
+		if (shader->flags & Shader_Flags::USES_TEXTURE) {
+			check_gl_error_and_fail("mid2 - shader_init_model locations");
+
+			glEnableVertexAttribArray(shader->uv_location);
+			glVertexAttribPointer(shader->uv_location, 2, GL_FLOAT, GL_FALSE, stride, (GLvoid*)(6 * sizeof(GLfloat)));
+		}
+
+		check_gl_error_and_fail("end - shader_init_model locations");
+	}
+}
+
 void shader_draw_call(Model_Info_For_Shading* model_info) {
 
 	if (model_info->initialized) {
 
 		Material_Shader* shader = model_info->shader;
 		glUseProgram(shader->gl_id);
-			
+
 		if (shader->flags & Shader_Flags::USES_TEXTURE) {
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, model_info->shader_texture_color_id);
@@ -464,6 +528,46 @@ void shader_draw_call(Model_Info_For_Shading* model_info) {
 
 		check_gl_error_and_fail("mid - shader_draw_call locations");
 
+
+		glDrawArrays(GL_TRIANGLES, 0, (GLsizei)vert_count);
+		//glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glBindVertexArray(0);
+
+		check_gl_error_and_fail("end - shader_draw_call locations");
+	}
+}
+
+
+// @CopyPasta from above
+void shader_draw_call(Animated_Model_Info_For_Shading* model_info, int frame_index) {
+
+	if (model_info->initialized) {
+
+		Material_Shader* shader = model_info->shader;
+		glUseProgram(shader->gl_id);
+
+		if (shader->flags & Shader_Flags::USES_TEXTURE) {
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, model_info->shader_texture_color_id);
+		}
+
+		glEnable(GL_DEPTH_TEST);
+
+		assert(frame_index >= 0);
+		assert(frame_index < model_info->model.count);
+
+		int i = frame_index;
+		GLuint vao = model_info->shader_vao[i];
+		GLuint vbo = model_info->shader_vbo[i];
+		size_t vert_count = model_info->model.meshes[i].count;
+
+		check_gl_error_and_fail("before - shader_draw_call locations");
+
+
+		glBindVertexArray(vao);
+		//glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+		check_gl_error_and_fail("mid - shader_draw_call locations");
 
 		glDrawArrays(GL_TRIANGLES, 0, (GLsizei)vert_count);
 		//glBindBuffer(GL_ARRAY_BUFFER, 0);

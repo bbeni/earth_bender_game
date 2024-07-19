@@ -13,10 +13,10 @@ void construct_cube_triangles(Model* model) {
 
 	for (int i = -1; i < 2; i += 2) {
 
-		Vertex_Info v1 = { -s, -s, -s * i };
-		Vertex_Info v2 = { s, -s, -s * i };
-		Vertex_Info v3 = { s,  s, -s * i };
-		Vertex_Info v4 = { -s,  s, -s * i };
+		Vertex_Info v1 = { -s*i, -s*i, -s * i };
+		Vertex_Info v2 = { s,      -s, -s * i };
+		Vertex_Info v3 = { s*i,   s*i, -s * i };
+		Vertex_Info v4 = { -s,      s, -s * i };
 
 		// seems legit
 		d_append(m, v1);
@@ -140,11 +140,113 @@ void construct_normals(Model* model) {
 }
 
 static const uint32_t BADA_FILE_MAGIC = 0xdabadaba;
+
+
+// read a .bada file generated with the blender script. will abort on error
+Animated_Model load_anim_bada_file(const char* file_path) {
+	const uint32_t BADA_VERSION = 2;
+
+	// TODO: use read file directly
+	char* data;
+	int size;
+	if (!load_resource(file_path, &size, &data)) {
+		assert(false && "failed to load bada file");
+	}
+
+	printf("Info: %s has %d bytes of content\n", file_path, size);
+
+	// check filemagic
+	printf("Info: supposed filemagic reversed is: 0x%4X\n", *(uint32_t*)data);
+	uint32_t supposed_filemagic = *(uint32_t*)data;
+	data += 4;
+	assert(supposed_filemagic == BADA_FILE_MAGIC);
+
+	// check version number
+	int32_t supposed_version = *(int32_t*)data;
+	data += 4;
+	if (supposed_version > BADA_VERSION) {
+		printf("Error: Loading .bada file '%s': the version is too high so we don't know how to load it. Epected %d got %d (a currupted file is also likely..)\n", file_path, BADA_VERSION, supposed_version);
+		assert(false);
+	}
+
+	if (supposed_version < BADA_VERSION) {
+		printf("Error: Loading .bada file '%s': the version is too low and we don't support migrations for now. Epected %d got %d\n", file_path, BADA_VERSION, supposed_version);
+		assert(false);
+	}
+
+	// flags
+	assert(*(uint32_t*)data == 1); // for now we support only triangles
+	data += 4;
+
+	// reserved skipped for now
+	data += 4 * 4;
+
+	// extract frames count
+	int32_t frames_count = *(int32_t*)data;
+	data += 4;
+	
+	// extract faces count
+	int32_t faces_count = *(int32_t*)data;
+	data += 4;
+
+	printf("Info: we have %d frames, %d faces per fram, in bada version %d file\n", frames_count, faces_count, supposed_version);
+
+	Animated_Model model = { 0 };
+	model.count = frames_count;
+
+	for (int i = 0; i < frames_count; i++) {
+		model.meshes[i].count = 3 * faces_count;
+		model.meshes[i].data = (Vertex_Info*)malloc(sizeof(Vertex_Info) * model.meshes[i].count);
+	}
+
+	// we only have float data from now on
+	float* f_data = (float*)data;
+
+	for (int fn = 0; fn < frames_count; fn++) {
+
+		Vertex_Info_Array* mesh = &model.meshes[fn];
+
+		for (int i = 0; i < faces_count; i++) {
+
+			// skip material index for now
+			f_data++;
+
+			int base_index = i * 3;
+
+			mesh->data[base_index].normal.x = *(f_data++);
+			mesh->data[base_index].normal.y = *(f_data++);
+			mesh->data[base_index].normal.z = *(f_data++);
+
+			// copy the normal to other 2 vertex_info to mesh
+			for (int j = 1; j < 3; j++) {
+				mesh->data[base_index + j].normal = mesh->data[base_index].normal;
+			}
+
+			for (int j = 0; j < 3; j++) {
+				mesh->data[base_index + j].position.x = *(f_data++);
+				mesh->data[base_index + j].position.y = *(f_data++);
+				mesh->data[base_index + j].position.z = *(f_data++);
+			}
+
+			for (int j = 0; j < 3; j++) {
+				mesh->data[base_index + j].uv.x = *(f_data++);
+				mesh->data[base_index + j].uv.y = *(f_data++);
+				//printf("uv: (%f, %f)\n", mesh->data[base_index + j].uv.x, mesh->data[base_index + j].uv.y);
+			}
+		}
+	}
+
+	uint32_t magic = *(uint32_t*)f_data;
+	assert(*(uint32_t*)f_data == 0xdabadaba);
+
+	return model;
+}
+
+
 static const uint32_t BADA_VERSION = 1;
 
 // read a .bada file generated with the blender script. will abort on error
 Vertex_Info_Array load_mesh_bada_file(const char* file_path) {
-
 
 	// TODO: use read file directly
 	char* data;

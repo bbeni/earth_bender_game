@@ -33,6 +33,7 @@ typedef struct Model_Info_For_Shading {
 
 	bool initialized;  // set by shader_init_model()
 	Material_Shader* shader;    // set by shader_init_model()
+
 	GLuint shader_vao; // set by shader_init_model()
 	GLuint shader_vbo; // set by shader_init_model()
 
@@ -41,8 +42,26 @@ typedef struct Model_Info_For_Shading {
 } Model_Info_For_Shading;
 
 
+typedef struct Animated_Model_Info_For_Shading {
+	Animated_Model model;     // needs be set by user
+	char* texture_color_path; // optional set by user
+
+	bool initialized;  // set by shader_init_model()
+	Material_Shader* shader;    // set by shader_init_model()
+
+	GLuint shader_vao[MAX_FRAMES_PER_ANIMATION]; // set by shader_init_model()
+	GLuint shader_vbo[MAX_FRAMES_PER_ANIMATION]; // set by shader_init_model()
+
+	GLuint shader_texture_color_id; // set by shader_init_model()
+
+} Animated_Model_Info_For_Shading;
+
+
 // send data to shader
 void shader_init_model(Material_Shader* shader, Model_Info_For_Shading* model_info);
+void shader_init_animated_model(Material_Shader* shader, Animated_Model_Info_For_Shading* model_info);
+
 // draw the model (shader is stored by shader_send_attributes)
 void shader_draw_call(Model_Info_For_Shading* model_info);
+void shader_draw_call(Animated_Model_Info_For_Shading* model_info, int frame_index);
 //void shader_flush(Shader* shader);

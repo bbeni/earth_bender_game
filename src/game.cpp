@@ -104,8 +104,7 @@ Vec4 color_from_tile_type(Tile_Type type) {
 	}
 }
 
-Model_Info_For_Shading player_model_info = { 0 };
-
+Animated_Model_Info_For_Shading player_model_info = { 0 };
 Model_Info_For_Shading stone_model_info = { 0 };
 
 Model_Info_For_Shading base_tile_model_info = { 0 };
@@ -125,10 +124,13 @@ void init_models_for_drawing() {
 	shader_init_model(&shader_brdf, &stone_model_info);
 
 	
-	player_model_info.model.mesh = load_mesh_bada_file("../resources/3d_models/earth_bender.bada");
-	player_model_info.texture_color_path = (char*)"../resources/3d_models/earth_bender_color.jpg";
-	shader_init_model(&shader_brdf, &player_model_info);
+	//player_model_info.model.mesh = load_mesh_bada_file("../resources/3d_models/earth_bender.bada");
+	//player_model_info.texture_color_path = (char*)"../resources/3d_models/earth_bender_color.jpg";
+	//shader_init_model(&shader_brdf, &player_model_info);
 
+	player_model_info.model = load_anim_bada_file("../resources/3d_models/earth_bender_anim.bada");
+	player_model_info.texture_color_path = (char*)"../resources/3d_models/earth_bender_color.jpg";
+	shader_init_animated_model(&shader_brdf, &player_model_info);
 
 	construct_tile_triangles(&base_tile_model_info.model);
 	construct_normals(&base_tile_model_info.model);
@@ -154,7 +156,7 @@ void init_models_for_drawing() {
 
 void draw_stone(Player *p) {
 	Mat4 model_rotation = matrix_from_basis_vectors({ 1,0,0 }, { 0,1,0 }, { 0,0,1 });
-	Mat4 translation = matrix_translation(Vec3{ p->pos.x, p->pos.y, 5.0f });
+	Mat4 translation = matrix_translation(Vec3{ 4, 4, 1.0f });
 
 	shader_uniform_set(shader_brdf.gl_id, "model", translation * model_rotation * matrix_scale(0.5f));
 	shader_draw_call(&stone_model_info);
@@ -200,7 +202,7 @@ void draw_floor(Floor* floor) {
 			}
 
 			if (tile.type == Tile_Type::LAVA) {
-				float ambient_strength = 0.25f;
+				float ambient_strength = 0.05f;
 				shader_uniform_set(shader_phong.gl_id, "ambient_strength", ambient_strength);
 			}
 
@@ -211,7 +213,6 @@ void draw_floor(Floor* floor) {
 void set_player_model_view_projection(Player* p) {
 
 	// Model
-
 	Mat4 model = matrix_translation(Vec3{ p->pos.x, p->pos.y, p->pos.z }) *
 		matrix_rotation_euler(0.0f, 0.0f, (-p->direction_angle + M_PI)) *
 		matrix_scale(0.8f);
@@ -235,12 +236,20 @@ void set_player_model_view_projection(Player* p) {
 
 void draw_player(Player* p) {
 
-	shader_uniform_set(shader_brdf.gl_id, "ambient_strength", 0.4f);
+	shader_uniform_set(shader_brdf.gl_id, "ambient_strength", 0.15f);
 
 	set_player_model_view_projection(p);
-	shader_draw_call(&player_model_info);
 
-	shader_uniform_set(shader_brdf.gl_id, "ambient_strength", 0.25f);
+	const float animation_frame_time = 0.025f;
+	int frame_index = (int32_t)(get_time() / animation_frame_time) % player_model_info.model.count;
+
+	if (p->current_action == Action::IDLE) {
+		frame_index = 10;
+	}
+
+	shader_draw_call(&player_model_info, frame_index);
+
+	shader_uniform_set(shader_brdf.gl_id, "ambient_strength", 0.05f);
 }
 
 void update_player(Player* p, Floor* floor) {

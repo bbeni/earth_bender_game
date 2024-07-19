@@ -32,8 +32,8 @@ int main() {
     player.pos = Vec3{1.0f, 1.0f, 0.5f };
     player.direction_angle = 0.0f;
     
-    player.turn_speed = 12.0f;
-    player.walk_speed = 11.0f;
+    player.turn_speed = 6.0f;
+    player.walk_speed = 4.0f;
 
     while (!quit) {
 
@@ -107,8 +107,8 @@ int main() {
         clamp(&r, 0.0f, 1.0f);
 
         //clear_it(r, 0.2f, g, 1.0f);
-        //clear_it(0.25f, 0.35f, 0.85f, 1.0f);
-        clear_it(0.0f, 0.0f, 0.0f, 1.0f);
+        clear_it(0.25f, 0.35f, 0.85f, 1.0f);
+        //clear_it(0.0f, 0.0f, 0.0f, 1.0f);
 
         update_player(&player, &floor);
 

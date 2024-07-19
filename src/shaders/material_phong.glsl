@@ -15,9 +15,7 @@ uniform mat4 view;
 void main() {
 	gl_Position = projection * view * model * vec4(vert_position, 1.0);
 	frag_pos = vec3(model * vec4(vert_position, 1.0));
-	//frag_normal = vert_normal;
-	frag_normal = normalize(mat3(model) * vert_normal).xyz;	
-
+	frag_normal = mat3(model) * vert_normal;	
 }
 
 #endif //VERTEX_SHADER
@@ -28,16 +26,17 @@ void main() {
 out vec4 color;
 
 uniform vec3 object_color;
-uniform vec3 light_position;
+uniform vec3 light_direction;
 uniform vec3 light_color;
+uniform float light_strength;
+
 uniform float ambient_strength;
 
 void main() {
 	vec3 norm = normalize(frag_normal);
-	vec3 light_dir = normalize(light_position - frag_pos);
-	
-	float diff = max(dot(norm, light_dir), 0.0);
-	vec3 diffuse = diff * light_color;
+
+	float diff = max(dot(norm, light_direction), 0.0);
+	vec3 diffuse = diff * light_color * light_strength;
 	
 	vec3 ambient = ambient_strength * light_color;
 	vec3 res = (ambient + diffuse) * object_color;
