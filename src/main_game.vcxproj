@@ -85,7 +85,7 @@
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
-      <SubSystem>NotSet</SubSystem>
+      <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
@@ -113,7 +113,7 @@
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
-      <SubSystem>NotSet</SubSystem>
+      <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
@@ -155,9 +155,11 @@
     <ClInclude Include="rendering_backend.hpp" />
     <ClInclude Include="resource_loading.hpp" />
     <ClInclude Include="shaders.hpp" />
+    <ClInclude Include="stb_libraries\stb_image.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\material_brdf.glsl" />
+    <None Include="shaders\material_phong.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

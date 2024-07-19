@@ -28,18 +28,21 @@ void immediate_quad(float x, float y, float width, float height, Vec4 color);
 void immediate_send();
 
 typedef struct Model_Info_For_Shading {
-	Static_Model model; // needs be set by user
+	Model model;              // needs be set by user
+	char* texture_color_path; // optional set by user
 
 	bool initialized;  // set by shader_init_model()
-	Shader* shader;    // set by shader_init_model()
+	Material_Shader* shader;    // set by shader_init_model()
 	GLuint shader_vao; // set by shader_init_model()
 	GLuint shader_vbo; // set by shader_init_model()
+
+	GLuint shader_texture_color_id; // set by shader_init_model()
 
 } Model_Info_For_Shading;
 
 
 // send data to shader
-void shader_init_model(Shader* shader, Model_Info_For_Shading* model_info);
+void shader_init_model(Material_Shader* shader, Model_Info_For_Shading* model_info);
 // draw the model (shader is stored by shader_send_attributes)
 void shader_draw_call(Model_Info_For_Shading* model_info);
 //void shader_flush(Shader* shader);

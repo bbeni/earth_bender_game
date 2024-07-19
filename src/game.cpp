@@ -106,6 +106,8 @@ Vec4 color_from_tile_type(Tile_Type type) {
 
 Model_Info_For_Shading player_model_info = { 0 };
 
+Model_Info_For_Shading stone_model_info = { 0 };
+
 Model_Info_For_Shading base_tile_model_info = { 0 };
 Model_Info_For_Shading north_ramp_model_info = { 0 };
 Model_Info_For_Shading east_ramp_model_info = { 0 };
@@ -117,10 +119,16 @@ void init_models_for_drawing() {
 
 	//construct_cube_triangles(&player_model_info.model);
 	//construct_normals(&player_model_info.model);
-	
 
+	stone_model_info.model.mesh = load_mesh_bada_file("../resources/3d_models/stone_block.bada");
+	stone_model_info.texture_color_path = (char*)"../resources/3d_models/stone_block_color.jpg";
+	shader_init_model(&shader_brdf, &stone_model_info);
+
+	
 	player_model_info.model.mesh = load_mesh_bada_file("../resources/3d_models/earth_bender.bada");
-	shader_init_model(&shader_phong, &player_model_info);
+	player_model_info.texture_color_path = (char*)"../resources/3d_models/earth_bender_color.jpg";
+	shader_init_model(&shader_brdf, &player_model_info);
+
 
 	construct_tile_triangles(&base_tile_model_info.model);
 	construct_normals(&base_tile_model_info.model);
@@ -142,11 +150,20 @@ void init_models_for_drawing() {
 	construct_normals(&west_ramp_model_info.model);
 	shader_init_model(&shader_phong, &west_ramp_model_info);
 
+}
 
+void draw_stone(Player *p) {
+	Mat4 model_rotation = matrix_from_basis_vectors({ 1,0,0 }, { 0,1,0 }, { 0,0,1 });
+	Mat4 translation = matrix_translation(Vec3{ p->pos.x, p->pos.y, 5.0f });
+
+	shader_uniform_set(shader_brdf.gl_id, "model", translation * model_rotation * matrix_scale(0.5f));
+	shader_draw_call(&stone_model_info);
 }
 
 void draw_floor(Floor* floor) {
 
+	Mat4 model_rotation = matrix_from_basis_vectors({ 1,0,0 }, { 0,1,0 }, { 0,0,1 });
+	Mat4 translation = matrix_translation(Vec3{ 2.0f, 1.0f, 5.0f });
 
 	for (int i = 0; i < FLOOR_W; i++) {
 		for (int j = 0; j < FLOOR_D; j++) {
@@ -160,9 +177,8 @@ void draw_floor(Floor* floor) {
 			Vec4 color =color_from_tile_type(tile.type);
 			shader_uniform_set(shader_phong.gl_id, "object_color", Vec3{ color.x, color.y, color.z });
 
-			Mat4 model_rotation = matrix_from_basis_vectors({1,0,0}, {0,1,0}, {0,0,1});
-			Mat4 translation = matrix_translation(Vec3{ 1.0f * i, 1.0f * j, elevation});
-			Mat4 model = matrix_from_basis_vectors({1, 0, 0}, {0, 1, 0}, {0, 0, 1}) * translation * model_rotation;
+			translation = matrix_translation(Vec3{ 1.0f * i, 1.0f * j, elevation});
+			Mat4 model = translation * model_rotation;
 			shader_uniform_set(shader_phong.gl_id, "model", model);
 
 			if (tile.type == Tile_Type::LAVA) {
@@ -192,46 +208,40 @@ void draw_floor(Floor* floor) {
 	}
 }
 
-void set_player_model_view_projection(Player* p);
-
-
-void draw_player(Player* p) {
-
-	Vec4 color = Vec4{0.8f, 0.8f, 0.5f, 1.0f};
-
-	shader_uniform_set(shader_phong.gl_id, "object_color", Vec3{ color.x, color.y, color.z });
-	shader_uniform_set(shader_phong.gl_id, "ambient_strength", 1.0f);
-
-	set_player_model_view_projection(p);
-
-	shader_draw_call(&player_model_info);
-	shader_uniform_set(shader_phong.gl_id, "ambient_strength", 0.25f);
-}
-
-
 void set_player_model_view_projection(Player* p) {
 
 	// Model
 
-	Mat4 model = matrix_translation(Vec3{ p->pos.x, p->pos.y, p->pos.z + 0.5f }) *
+	Mat4 model = matrix_translation(Vec3{ p->pos.x, p->pos.y, p->pos.z }) *
 		matrix_rotation_euler(0.0f, 0.0f, (-p->direction_angle + M_PI)) *
 		matrix_scale(0.8f);
-	shader_uniform_set(shader_phong.gl_id, "model", model);
+	shader_uniform_set(shader_brdf.gl_id, "model", model);
 
 	// View
-	Vec3 camera_pos = Vec3{ p->pos.x, p->pos.y, 0.0f } + Vec3{	 -4.0f, -4.0f, 10.0f };
-	Mat4 view = matrix_camera(camera_pos, {1.5f, 1.5f, -2.6f}, {0.0f, 0.0f, 1.0f});
+	Vec3 camera_pos = Vec3{ p->pos.x, p->pos.y, 0.0f } + Vec3{ -3.5f, -3.5f, 7.5f };
+	Mat4 view = matrix_camera(camera_pos, {1.5f, 1.5f, -2.0f}, {0.0f, 0.0f, 1.0f});
 	float det = matrix_det(view);
+	shader_uniform_set(shader_brdf.gl_id, "view", view);
 	shader_uniform_set(shader_phong.gl_id, "view", view);
 
 	// Projection
 	float near_plane = 0.01f;
 	float far_plane = 1000.0f;
 	Mat4 projection = matrix_perspective(p->fov, 1.4f, near_plane, far_plane);
+	shader_uniform_set(shader_brdf.gl_id, "projection", projection);
 	shader_uniform_set(shader_phong.gl_id, "projection", projection);
-
 }
 
+
+void draw_player(Player* p) {
+
+	shader_uniform_set(shader_brdf.gl_id, "ambient_strength", 0.4f);
+
+	set_player_model_view_projection(p);
+	shader_draw_call(&player_model_info);
+
+	shader_uniform_set(shader_brdf.gl_id, "ambient_strength", 0.25f);
+}
 
 void update_player(Player* p, Floor* floor) {
 	float frame_time = get_frame_time();
@@ -246,7 +256,7 @@ void update_player(Player* p, Floor* floor) {
 	float target_angle = p->target_direction_angle;
 
 
-	if (p->direction_angle != p->target_direction_angle) {
+	if (fabs(p->direction_angle - p->target_direction_angle) > 0.00001f) {
 		p->current_action = Action::TURNING;
 		move_towards_on_circle(&p->direction_angle, p->target_direction_angle, p->turn_speed, frame_time);
 	}
@@ -265,25 +275,53 @@ void update_player(Player* p, Floor* floor) {
 	if (p->current_action == Action::WALKING) {
 		Vec3 desired_pos = p->pos + p->velocity * (float)get_frame_time();
 
-		Tile* desired_tile = NULL;
-		{
-			int i = (int)floorf(desired_pos.x + 0.5f);
-			int j = (int)floorf(desired_pos.y + 0.5f);
+		int current_i = (int)floorf(p->pos.x + 0.5f);
+		int current_j = (int)floorf(p->pos.y + 0.5f);
 
-			if ((i >= 0 && i < FLOOR_W) && (j >= 0 && j < FLOOR_D)) {
-				desired_tile = &floor->tiles[i][j];
+		int desired_i = (int)floorf(desired_pos.x + 0.5f);
+		int desired_j = (int)floorf(desired_pos.y + 0.5f);
+
+		Tile* desired_tile = NULL;
+		Tile* current_tile = NULL;
+		{
+			if ((desired_i >= 0 && desired_i < FLOOR_W) && (desired_j >= 0 && desired_j < FLOOR_D)) {
+				desired_tile = &floor->tiles[desired_i][desired_j];
 			}
-			else {
-				i = i;
+
+			if ((current_i >= 0 && current_i < FLOOR_W) && (current_j >= 0 && current_j < FLOOR_D)) {
+				current_tile = &floor->tiles[current_i][current_j];
 			}
+
 		}
 
-		if (desired_tile != NULL && !desired_tile->block_walking) {
-			p->pos = desired_pos;
-			p->pos.z = 0.5f * desired_tile->height;
 
-			if (desired_tile->ramp_direction != Orientation::NO_ORIENTATION && false) {
-				
+		if (current_tile != NULL && (desired_tile == NULL || desired_tile->block_walking)) {
+			// snap the x or y cordinate to previous
+			int d_i = desired_i - current_i;
+			int d_j = desired_j - current_j;
+
+			if (d_i != 0) {
+				desired_pos.x = p->pos.x;
+			}
+
+			if (d_j != 0) {
+				desired_pos.y = p->pos.y;
+			}
+
+			// we are allowed to walk now
+			p->pos = desired_pos;
+			p->pos.z = current_tile->height * 0.5f + 0.5f;
+
+		} 
+
+		if (desired_tile != NULL && !desired_tile->block_walking) {
+
+			// we are allowed to walk
+			p->pos = desired_pos;
+			p->pos.z = desired_tile->height * 0.5f + 0.5f;
+
+			if (desired_tile->ramp_direction != Orientation::NO_ORIENTATION) {
+
 				float x = p->pos.x - floorf(p->pos.x);
 				float y = p->pos.y - floorf(p->pos.y);
 
@@ -311,12 +349,12 @@ void update_player(Player* p, Floor* floor) {
 
 
 
-void draw_map_floor(Floor* floor, Player* p) {
+void draw_minimap(Floor* floor, Player* p) {
 
 	float offset = -1.0f; // rendering left bottom corner is (-1, -1)
 
-	float width = 0.012f;
-	float height = 0.018f;
+	float width = 0.008f;
+	float height = 0.012f;
 
 	float pad_x = 0;// width * 0.013f;
 	float pad_y = 0;//height * 0.013f;

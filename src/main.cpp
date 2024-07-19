@@ -29,10 +29,10 @@ int main() {
     draw_floor(&floor);
 
     Player player = { 0 };
-    player.pos = Vec3{1.0f, 1.0f, 1.0f };
+    player.pos = Vec3{1.0f, 1.0f, 0.5f };
     player.direction_angle = 0.0f;
     
-    player.turn_speed = 19.0f;
+    player.turn_speed = 12.0f;
     player.walk_speed = 11.0f;
 
     while (!quit) {
@@ -66,14 +66,8 @@ int main() {
 
         normalize_or_y_axis(&direction);
 
-        printf("%d current_action\n", player.current_action);
-
-        if (player.current_action == Action::WALKING) player.target_direction_angle = angle_between(direction, Vec2{0, 1});
-
-        printf("Direction Angle: %f\n", player.target_direction_angle);
-
-        //while (player.target_direction_angle > M_PI)  player.target_direction_angle -= 2*M_PI;
-
+        if (player.current_action == Action::WALKING) 
+            player.target_direction_angle = angle_between(direction, Vec2{0, 1});
 
         for (int i = 0; i < events_this_frame.count; i++) {
             Event event = events_this_frame.data[i];
@@ -113,17 +107,21 @@ int main() {
         clamp(&r, 0.0f, 1.0f);
 
         //clear_it(r, 0.2f, g, 1.0f);
-        clear_it(0.25f, 0.35f, 0.85f, 1.0f);
+        //clear_it(0.25f, 0.35f, 0.85f, 1.0f);
+        clear_it(0.0f, 0.0f, 0.0f, 1.0f);
 
         update_player(&player, &floor);
 
-        draw_map_floor(&floor, &player);
+        draw_minimap(&floor, &player);
+
 
         //update_phong(get_time());
         draw_player(&player);
 
 
         draw_floor(&floor);
+
+        draw_stone(&player);
 
 
         float shake_amount = shake_timer;

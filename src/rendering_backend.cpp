@@ -1,5 +1,8 @@
 #include "glad/glad.h"
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_libraries/stb_image.h"
+
 #include "rendering_backend.hpp"
 
 #include "shaders.hpp"
@@ -345,9 +348,48 @@ void immediate_quad(float x, float y, float width, float height, Vec4 color) {
 	immediate_quad(p1, p2, p3, p4, color);
 }
 
+GLuint load_texture(char* texture_path) {
+
+	int w, h;
+	int n;
+	stbi_set_flip_vertically_on_load(true);
+	unsigned char *image_data = stbi_load(texture_path, &w, &h, &n, STBI_rgb);
+	assert(image_data != NULL);
+
+	// @MemoryLeak call free after we load to gpu?
+	// stbi_image_free(image_data);
+
+	GLuint texture_id;
+
+
+	glGenTextures(1, &texture_id);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texture_id);
+	check_gl_error_and_fail("in load_texture() begin");
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	check_gl_error_and_fail("in load_texture() mid");
+	
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, image_data);
+
+	check_gl_error_and_fail("in load_texture() end");
+	
+	return texture_id;
+}
 
 // send data to shader
-void shader_init_model(Shader* shader, Model_Info_For_Shading *model_info) {
+void shader_init_model(Material_Shader* shader, Model_Info_For_Shading *model_info) {
+
+	glUseProgram(shader->gl_id);
+	check_gl_error_and_fail("after glUseProgram()");
+
+	if (model_info->texture_color_path) {
+		model_info->shader_texture_color_id = load_texture(model_info->texture_color_path);
+	}
 
 	size_t vert_count = model_info->model.mesh.count;
 	Vertex_Info* vertex_data = model_info->model.mesh.data;
@@ -356,8 +398,6 @@ void shader_init_model(Shader* shader, Model_Info_For_Shading *model_info) {
 		return;
 	}
 
-	glUseProgram(shader->gl_id);
-	check_gl_error_and_fail("after glUseProgram()");
 
 	if (!model_info->initialized) {
 		model_info->initialized = true;
@@ -381,12 +421,18 @@ void shader_init_model(Shader* shader, Model_Info_For_Shading *model_info) {
 	glEnableVertexAttribArray(shader->position_location);
 	glVertexAttribPointer(shader->position_location, 3, GL_FLOAT, GL_FALSE, stride, (GLvoid*)0);
 
-	check_gl_error_and_fail("mid - shader_init_model locations");
+	check_gl_error_and_fail("mid1 - shader_init_model locations");
 
 	glEnableVertexAttribArray(shader->normal_location);
 	glVertexAttribPointer(shader->normal_location, 3, GL_FLOAT, GL_FALSE, stride, (GLvoid*)(3 * sizeof(GLfloat)));
 
-	// TODO uv goes here
+
+	if (shader->flags & Shader_Flags::USES_TEXTURE) {
+		check_gl_error_and_fail("mid2 - shader_init_model locations");
+
+		glEnableVertexAttribArray(shader->uv_location);
+		glVertexAttribPointer(shader->uv_location, 2, GL_FLOAT, GL_FALSE, stride, (GLvoid*)(6 * sizeof(GLfloat)));
+	}
 
 	check_gl_error_and_fail("end - shader_init_model locations");
 
@@ -396,7 +442,14 @@ void shader_draw_call(Model_Info_For_Shading* model_info) {
 
 	if (model_info->initialized) {
 
-		glUseProgram(model_info->shader->gl_id);
+		Material_Shader* shader = model_info->shader;
+		glUseProgram(shader->gl_id);
+			
+		if (shader->flags & Shader_Flags::USES_TEXTURE) {
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, model_info->shader_texture_color_id);
+		}
+
 		glEnable(GL_DEPTH_TEST);
 
 		GLuint vao = model_info->shader_vao;

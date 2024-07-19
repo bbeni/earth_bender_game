@@ -119,64 +119,10 @@ MULTILINE_STRING(
 };
 
 
-Shader shader_phong;
-
-// TODO goal is a phong shader
-// 0 is vertexshader, 1 is fragmentshader
-const char* shader_phong_source = {
-MULTILINE_STRING(
-	COMMUNICATE vec3 frag_pos;\n
-	COMMUNICATE vec3 frag_normal;\n
-
-	#ifdef VERTEX_SHADER \n
-
-	layout(location = 0) in vec3 vert_position;\n
-	layout(location = 1) in vec3 vert_normal;\n
-
-	uniform mat4 projection;\n
-	uniform mat4 model;\n
-	uniform mat4 view;\n
-
-	void main() {
-		\n
-		gl_Position = projection * view * model * vec4(vert_position, 1.0);\n
-		frag_pos = vec3(model * vec4(vert_position, 1.0));\n
-		frag_normal = vert_normal;\n
-		//frag_normal.x = -frag_normal.x;\n
-		//frag_normal.y = -frag_normal.y;\n
-	}\n
-
-	#endif \n// VERTEX_SHADER
-
-
-	#ifdef FRAGMENT_SHADER \n
-
-	out vec4 color;\n
-	
-	uniform vec3 object_color;\n
-	uniform vec3 light_position;\n
-	uniform vec3 light_color;\n
-	uniform float ambient_strength;\n
-	
-	void main() {\n
-	   vec3 norm = normalize(frag_normal);\n
-	   vec3 light_dir = normalize(light_position - frag_pos);\n
-
-	   float diff = max(dot(norm, light_dir), 0.0);\n
-	   vec3 diffuse = diff * light_color;\n
-
-	   vec3 ambient = ambient_strength * light_color;\n
-	   vec3 res = (ambient + diffuse) * object_color;\n
-	   color = vec4(res, 1.0);\n
-	}\n
-
-	#endif \n//FRAGMENT_SHADER
-)
-};
-
+Material_Shader shader_phong;
+Material_Shader shader_brdf;
 
 // TODO: save loactions in hash_table
-
 void shader_uniform_set(GLuint shader_id, const char* value_name, const Mat4& mat4) {
 	glUseProgram(shader_id); // temporary
 
@@ -219,44 +165,6 @@ void shader_uniform_set(GLuint shader_id, const char* value_name, const float va
 }
 
 
-void init_phong_uniforms();
-
-void backend_create_shaders() {
-
-	// immediate color
-
-	immediate_shader_color = { 0 };
-	immediate_shader_color.gl_id = compile_shader(immediate_shader_color_source);
-	immediate_shader_color.position_location = 0;
-	immediate_shader_color.color_location = 1;
-
-	Mat4 projection = matrix_unit();
-	shader_uniform_set(immediate_shader_color.gl_id, "projection", projection);
-
-	// phong
-
-	shader_phong = { 0 };
-	shader_phong.gl_id = compile_shader(shader_phong_source);
-	shader_phong.position_location = 0;
-	shader_phong.normal_location = 1;
-
-	init_phong_uniforms();
-
-	// brdf
-
-	const char* source_path = "shaders/material_brdf.glsl";
-	char* brdf_source;
-	int brdf_source_length;
-
-	if (!load_resource(source_path, &brdf_source_length,  &brdf_source)) {
-		printf("Error: failed to load resource %f\n", source_path);
-		exit(1);
-	}
-
-	compile_shader(brdf_source, brdf_source_length);
-
-}
-
 void init_phong_uniforms() {
 	glUseProgram(shader_phong.gl_id);
 
@@ -269,12 +177,6 @@ void init_phong_uniforms() {
 	float ambient_strength = 0.25f;
 
 	float time = 0.0f;
-	// Camera/view transformation
-	//Vec3 camera_pos = { -18.5f * cosf(time), -10.0f, -18.5f * sinf(time) };
-	//Vec3 camera_pos = { -20.0f,  5.0f, -20.0f };
-	//Vec3 camera_target = { 0.0f, 6.0f, 0.0f };
-	//Vec3 up_vector = { 0.0f, -1.0f, 0.0f };
-	//Mat4 view = matrix_look_at(camera_pos, camera_target, up_vector);
 
 	Mat4 view = matrix_camera(Vec3{ -3.0f, 3.0f, -3.0f }, Vec3{ 1.0f, 0.0f, 1.0f}, Vec3{0.0f, 1.0f, 0.0f});
 
@@ -282,8 +184,8 @@ void init_phong_uniforms() {
 	float fov = 60.0f;
 	float near_plane = 0.01f;
 	float far_plane = 1000.0f;
-	Mat4 projection = matrix_perspective(fov, 1.4f, near_plane, far_plane);
 
+	Mat4 projection = matrix_perspective(fov, 1.4f, near_plane, far_plane);
 	//projection = matrix_perspective_orthographic(-3.5f, 1.5f, 7.0f, 3.0f, near_plane, far_plane);
 
 	// Model transformation
@@ -299,47 +201,90 @@ void init_phong_uniforms() {
 
 }
 
-/*
-// TODO delete:
-// temporary 
-void update_phong(float time) {
+
+void init_brdf_uniforms() {
 	glUseProgram(shader_phong.gl_id);
 
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 
-	// Lighting and material properties
-	//Vec3 light_pos = { -0.3f, -2.0f + time*0.3f, 0.7f};
-	Vec3 light_pos = {23.5f, 3.5f, 12.0f};
-
-	//printf("light position: %f %f %f\n", light_pos.x, light_pos.y, light_pos.z);
+	Vec3 light_direction = { 4.0f, -2.5f, -4.0f };
 	Vec3 light_color = { 0.95f, 0.8f, 0.7f };
-	Vec3 object_color = { 0.7f, 0.9f, 0.3f };
-	float ambient_strength = 0.01f;
+	float light_strength = 10.0f;
 
-	// Camera/view transformation
-	Vec3 camera_pos = { -18.5f*cosf(time), -10.0f, -18.5f * sinf(time) };
-	Vec3 camera_target = { 0.0f, 0.0f, 0.0f };
-	Vec3 up_vector = { 0.0f, 1.0f, 0.0f };
-	Mat4 view = matrix_look_at(camera_pos, camera_target, up_vector);
+	Vec3 object_color = { 0.7f, 0.9f, 0.3f };
+	float ambient_strength = 0.0f;
+
+	float time = 0.0f;
+
+	Mat4 view = matrix_camera(Vec3{ -3.0f, 3.0f, -3.0f }, Vec3{ 1.0f, 0.0f, 1.0f }, Vec3{ 0.0f, 1.0f, 0.0f });
 
 	// Perspective projection
 	float fov = 60.0f;
 	float near_plane = 0.01f;
-	float far_plane = 100.0f;
-	Mat4 projection = matrix_perspective(fov, 1.4f, near_plane, far_plane);
+	float far_plane = 1000.0f;
 
-	//projection = matrix_perspective_orthographic(-1.5f, 1.5f, -1.0f, 1.0f, near_plane, far_plane);
+	Mat4 projection = matrix_perspective(fov, 1.4f, near_plane, far_plane);
+	//projection = matrix_perspective_orthographic(-3.5f, 1.5f, 7.0f, 3.0f, near_plane, far_plane);
 
 	// Model transformation
 	Mat4 model = matrix_scale(1.0f);
 
-	shader_uniform_set(shader_phong.gl_id, "projection", projection);
-	shader_uniform_set(shader_phong.gl_id, "model", model);
-	shader_uniform_set(shader_phong.gl_id, "view", view);
-	shader_uniform_set(shader_phong.gl_id, "light_position", light_pos);
-	shader_uniform_set(shader_phong.gl_id, "light_color", light_color);
-	shader_uniform_set(shader_phong.gl_id, "ambient_strength", ambient_strength);
-	shader_uniform_set(shader_phong.gl_id, "object_color", object_color);
+	shader_uniform_set(shader_brdf.gl_id, "projection", projection);
+	shader_uniform_set(shader_brdf.gl_id, "model", model);
+	shader_uniform_set(shader_brdf.gl_id, "view", view);
+	
+	shader_uniform_set(shader_brdf.gl_id, "light_direction", light_direction);
+	shader_uniform_set(shader_brdf.gl_id, "light_color", light_color);
+	shader_uniform_set(shader_brdf.gl_id, "light_strength", light_strength);
 
-} */
+	shader_uniform_set(shader_brdf.gl_id, "ambient_strength", ambient_strength);
+	
+}
+
+GLuint load_shader_from_path(const char* source_path) {
+
+	char* shader_source;
+	int source_length;
+
+	if (!load_resource(source_path, &source_length, &shader_source)) {
+		printf("Error: failed to load resource %s\n", source_path);
+		exit(1);
+	}
+
+	GLuint shader_id = compile_shader(shader_source, source_length);
+	if (shader_id == 0) {
+		printf("Error: failed to load shader '%s' (info: subtract 3 from line numbers beacuse of shader header).\n", source_path);
+		exit(1);
+	}
+
+	return shader_id;
+}
+
+void backend_create_shaders() {
+
+	// immediate color
+
+	immediate_shader_color = { 0 };
+	immediate_shader_color.gl_id = compile_shader(immediate_shader_color_source);
+	immediate_shader_color.position_location = 0;
+	immediate_shader_color.color_location = 1;
+
+	// phong
+	shader_phong = { 0 };
+	shader_phong.gl_id = load_shader_from_path("shaders/material_phong.glsl");
+	shader_phong.position_location = 0;
+	shader_phong.normal_location = 1;
+	init_phong_uniforms();
+
+	// brdf
+	shader_brdf = { 0 };
+	shader_brdf.gl_id = load_shader_from_path("shaders/material_brdf.glsl");
+	shader_brdf.position_location = 0;
+	shader_brdf.normal_location = 1;
+	shader_brdf.uv_location = 2;
+
+	shader_brdf.flags = Shader_Flags::USES_TEXTURE;
+	init_brdf_uniforms();
+
+}

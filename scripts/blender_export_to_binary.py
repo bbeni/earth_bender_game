@@ -29,6 +29,7 @@ import bmesh
 
 
 FILE_MAGIC = b'\xba\xda\xba\xda'
+VERSION_NUMBER = 1
 
 def write_some_data(context, filepath, convert_to_tris, world_space, rot_x90):
         
@@ -45,7 +46,6 @@ def write_some_data(context, filepath, convert_to_tris, world_space, rot_x90):
     bpy.ops.object.mode_set(mode='EDIT')
     bpy.ops.mesh.select_all(action='SELECT')
     bpy.ops.object.mode_set(mode='OBJECT')
-
     
     # @Temporary just use the first objectp
     obj = objects[0]
@@ -60,20 +60,20 @@ def write_some_data(context, filepath, convert_to_tris, world_space, rot_x90):
         mat_x90 = mathutils.Matrix.Rotation(-math.pi/2, 4, 'X')
         obj.data.transform(mat_x90)
     
-    
     me = obj.data
     bm = bmesh.new()   # create an empty BMesh
     bm.from_mesh(me)   # fill it in from a Mesh
-    
+
     faces = list(bm.faces)
     uv_lay = bm.loops.layers.uv.active
-    
+
     #
     # Example using triangle faces
     # one letter coressponds to one byte here
     #
-    
+
     # xxxx filemagic
+    # iiii version number
     # iiii faces count
     # b___ do we only have tris?
     # per face we have:
@@ -82,62 +82,62 @@ def write_some_data(context, filepath, convert_to_tris, world_space, rot_x90):
     #   ffff y normal
     #   ffff z normal
     #   ffff x1
-    #   ffff y1 
+    #   ffff y1
     #   ffff z1
     #   ffff x2
-    #   ffff y2 
+    #   ffff y2
     #   ffff z2
     #   ffff x3
-    #   ffff y3 
+    #   ffff y3
     #   ffff z3
     #   ffff u1
-    #   ffff v1 
+    #   ffff v1
     #   ffff u2
-    #   ffff v2 
+    #   ffff v2
     #   ffff u3
-    #   ffff v3 
+    #   ffff v3
     # xxxx filemagic again
-    
+
     with open(filepath, 'wb') as f:
-            
+
         # python reference struct pckage        
         # i: 4 byte int, h: 2 byte short, b: 1 byte, x: pad 1 byte, q: 8 bytes,
         # d: 8 byte, f: 4 bytes
-    
+
         # File magic
         f.write(FILE_MAGIC)
-    
+        f.write(struct.pack('<i', VERSION_NUMBER))
+
         # amount of faces we have to prealocate when we load it
         f.write(struct.pack('<i', len(faces)))
         print("Have (", len(faces), ") faces.")
-        
+
         # did we convert to tris?
         f.write(struct.pack('<bxxx', convert_to_tris))
-        
+
         for face in faces:
-            
+
             loops = list(face.loops)
-            
+
             if convert_to_tris:
                 assert len(loops) == 3
-                
+
             # write material index
-            f.write(struct.pack("<i", face.material_index))      
-            
-            
+            f.write(struct.pack("<i", face.material_index))
+
             # we write normal x, y, z
             f.write(struct.pack("<fff", *face.normal))
             print("Normal: ", face.normal)          
-            
+
             # positions x1, y1, z1, x2, y2, y2, ...
             for i in range(len(loops)):
                 f.write(struct.pack("<fff", *loops[i].vert.co[:]))
-                print("Vert: ", loops[i].vert.co)         
-            
-            # uv        u1, v1,     u2, v2,     ...
+                print("Vert: ", loops[i].vert.co)
+
+            # uv coords u1, v1,     u2, v2,     ...
             for i in range(len(loops)):
                 f.write(struct.pack("<ff", *loops[i][uv_lay].uv))        
-                print("Vert: ", loops[i][uv_lay].uv)         
+                print("Vert: ", loops[i][uv_lay].uv)
 
         # File identifier again for signifing we won
         f.write(FILE_MAGIC)
@@ -183,8 +183,7 @@ class ExportBadaFile(Operator, ExportHelper):
         name="Rotate X 90",
         description="Rotate it by 90 degrees around X-axis",
         default=False
-    )
-    
+    )    
 
     def execute(self, context):
         return write_some_data(context, self.filepath, self.convert_tris, self.to_world_space, self.rotate90)

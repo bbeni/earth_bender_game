@@ -53,10 +53,10 @@ void generate_floor(Floor* floor);
 
 void update_player(Player* p, Floor* floor);
 
-void draw_map_floor(Floor* floor, Player* p);
+void draw_minimap(Floor* floor, Player* p);
 void draw_floor(Floor* floor);
 void draw_player(Player* p);
-
+void draw_stone(Player* p);
 
 
 // temporary for testing rendering the cube

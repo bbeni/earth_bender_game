@@ -6,6 +6,7 @@
 #include "glad/glad.h"
 #include <string.h>
 #include <stdio.h>
+#include <cstdint>
 
 void backend_create_shaders();
 void shader_uniform_set(GLuint shader_id, const char* value_name, const Mat4& mat4);
@@ -24,25 +25,24 @@ typedef struct Immediate_Shader {
 extern Immediate_Shader* current_shader;
 extern Immediate_Shader immediate_shader_color;
 
-typedef struct Shader {
+
+enum Shader_Flags : uint32_t {
+	NO_SHADER_FLAGS = 0x0,
+	USES_TEXTURE = 0x1,
+};
+
+typedef struct Material_Shader {
 	GLuint gl_id;
+	Shader_Flags flags;
 
 	GLuint position_location;
 	GLuint normal_location;
-	//GLuint uv;
+	GLuint uv_location;
 
-} Shader;
+} Material_Shader;
 
-extern Shader shader_phong;
-
-typedef struct BRDF_Material_Shader {
-	GLuint gl_id;
-
-	GLuint position_location;
-	GLuint normal_location;
-
-
-} BRDF_Material_Shader;
+extern Material_Shader shader_phong;
+extern Material_Shader shader_brdf;
 
 
 // gets added to the source when you call compile_shader

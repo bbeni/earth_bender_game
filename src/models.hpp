@@ -7,7 +7,7 @@
 typedef struct Vertex_Info {
 	Vec3 position;
 	Vec3 normal;
-	// uv etc..
+	Vec2 uv;
 } Vertex_Info;
 
 typedef struct Vertex_Info_Array {
@@ -16,10 +16,9 @@ typedef struct Vertex_Info_Array {
 	Vertex_Info* data;
 } Vertex_Info_Array;
 
-typedef struct Static_Model {
+typedef struct Model {
 	Vertex_Info_Array mesh;
-	//Mat4 projection;
-} Static_Model;
+} Model;
 
 enum Orientation {
 	NO_ORIENTATION = 0,
@@ -29,11 +28,11 @@ enum Orientation {
 	WEST,
 };
 
-void construct_cube_triangles(Static_Model* model);
-void construct_tile_triangles(Static_Model* model);
-void construct_ramp_triangles(Static_Model* model, Orientation ramp_orientation);
+void construct_cube_triangles(Model* model);
+void construct_tile_triangles(Model* model);
+void construct_ramp_triangles(Model* model, Orientation ramp_orientation);
 
-void construct_normals(Static_Model* model);
+void construct_normals(Model* model);
 
 // loading function for my own 3d model format
 Vertex_Info_Array load_mesh_bada_file(const char* file_path);

@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <cstdint>
 
-void construct_cube_triangles(Static_Model* model) {
+void construct_cube_triangles(Model* model) {
 	float s = 0.5f;
 
 	Vertex_Info_Array* m = &model->mesh;
@@ -63,7 +63,7 @@ void construct_cube_triangles(Static_Model* model) {
 
 
 // TODO these functions are kinda dirty... should use transformation matrices?
-void construct_tile_triangles(Static_Model* model) {
+void construct_tile_triangles(Model* model) {
 
 	construct_cube_triangles(model);
 	Vertex_Info_Array* m = &model->mesh;
@@ -76,7 +76,7 @@ void construct_tile_triangles(Static_Model* model) {
 }
 
 
-void construct_ramp_triangles(Static_Model* model, Orientation ramp_orientation) {
+void construct_ramp_triangles(Model* model, Orientation ramp_orientation) {
 
 	construct_cube_triangles(model);
 	Vertex_Info_Array* m = &model->mesh;
@@ -115,7 +115,7 @@ void construct_ramp_triangles(Static_Model* model, Orientation ramp_orientation)
 
 
 // calculate normals by face normal of triangles;
-void construct_normals(Static_Model* model) {
+void construct_normals(Model* model) {
 
 	assert(model->mesh.count % 3 == 0 && "vertex count needs be multiple of 3 for triangles.\n");
 
@@ -139,28 +139,45 @@ void construct_normals(Static_Model* model) {
 
 }
 
+static const uint32_t BADA_FILE_MAGIC = 0xdabadaba;
+static const uint32_t BADA_VERSION = 1;
+
 // read a .bada file generated with the blender script. will abort on error
 Vertex_Info_Array load_mesh_bada_file(const char* file_path) {
+
 
 	// TODO: use read file directly
 	char* data;
 	int size;
 	if (!load_resource(file_path, &size, &data)) {
-		exit(1);
+		assert(false && "failed to load bada file");
 	}
 
-	printf("INFO: %s has %d bytes of content\n", file_path, size);
+	printf("Info: %s has %d bytes of content\n", file_path, size);
 
 	// check filemagic
-	printf("INFO: supposed filemagic reversed is: 0x%4X\n", *(uint32_t*)data);
+	printf("Info: supposed filemagic reversed is: 0x%4X\n", *(uint32_t*)data);
 	uint32_t supposed_filemagic = *(uint32_t*)data;
 	data += 4;
-	assert(supposed_filemagic == 0xdabadaba);
+	assert(supposed_filemagic == BADA_FILE_MAGIC);
+
+	// check version number
+	int32_t supposed_version = *(int32_t*)data;
+	data += 4;
+	if (supposed_version > BADA_VERSION) {
+		printf("Error: Loading .bada file '%s': the version is too high so we don't know how to load it. Epected %d got %d (a currupted file is also likely..)\n", file_path, BADA_VERSION, supposed_version);
+		assert(false);
+	}
+
+	if (supposed_version < BADA_VERSION) {
+		printf("Error: Loading .bada file '%s': the version is too low and we don't support migrations for now. Epected %d got %d\n", file_path, BADA_VERSION, supposed_version);
+		assert(false);
+	}
 
 	// extract faces count
 	uint32_t faces_count = *(uint32_t*)data;
 	data += 4;
-	printf("INFO: we have %d faces in this file\n", faces_count);
+	printf("Info: we have %d faces in bada version %d file\n", faces_count, supposed_version);
 
 	assert(*(uint32_t*)data == 1); // for now we support only triangles
 	data += 4;
@@ -195,12 +212,10 @@ Vertex_Info_Array load_mesh_bada_file(const char* file_path) {
 			mesh.data[base_index+j].position.z = *(f_data++);
 		}
 
-		// drain for now
 		for (int j = 0; j < 3; j++) {
-			f_data++;
-			f_data++;
-			//mesh.texture_coords[base_index + 0 + j * 2] = *(f_data++);
-			//mesh.texture_coords[base_index + 1 + j * 2] = *(f_data++);
+			mesh.data[base_index + j].uv.x = *(f_data++);
+			mesh.data[base_index + j].uv.y = *(f_data++);
+			//printf("uv: (%f, %f)\n", mesh.data[base_index + j].uv.x, mesh.data[base_index + j].uv.y);
 		}
 	}
 	

@@ -74,8 +74,12 @@
     <ClInclude Include="resource_loading.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="stb_libraries\stb_image.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\material_brdf.glsl" />
+    <None Include="shaders\material_phong.glsl" />
   </ItemGroup>
 </Project>
