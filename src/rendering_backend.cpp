@@ -225,10 +225,10 @@ GLuint immediate_vbo;
 GLuint immediate_vao;
 
 
-typedef struct Immediate_Vert {
+struct Immediate_Vert {
 	Vec2 postition;
 	Vec4 color;
-} Immediate_Vert;
+};
 
 #define MAX_IMMEDIATE_VERTICES 32768
 Immediate_Vert immediate_vertices[MAX_IMMEDIATE_VERTICES];

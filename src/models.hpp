@@ -4,27 +4,27 @@
 
 // 3d rendering stuff
 
-typedef struct Vertex_Info {
+struct Vertex_Info {
 	Vec3 position;
 	Vec3 normal;
 	Vec2 uv;
-} Vertex_Info;
+};
 
-typedef struct Vertex_Info_Array {
+struct Vertex_Info_Array {
 	size_t capacity;
 	size_t count;
 	Vertex_Info* data;
-} Vertex_Info_Array;
+};
 
-typedef struct Model {
+struct Model {
 	Vertex_Info_Array mesh;
-} Model;
+};
 
 #define MAX_FRAMES_PER_ANIMATION 128
-typedef struct Animated_Model {
+struct Animated_Model {
 	size_t count;
 	Vertex_Info_Array meshes[MAX_FRAMES_PER_ANIMATION];
-} Animated_Model;
+};
 
 enum Orientation {
 	NO_ORIENTATION = 0,

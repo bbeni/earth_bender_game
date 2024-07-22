@@ -27,7 +27,7 @@ void immediate_quad(float x, float y, float width, float height, Vec4 color);
 
 void immediate_send();
 
-typedef struct Model_Info_For_Shading {
+struct Model_Info_For_Shading {
 	Model model;              // needs be set by user
 	char* texture_color_path; // optional set by user
 
@@ -38,11 +38,10 @@ typedef struct Model_Info_For_Shading {
 	GLuint shader_vbo; // set by shader_init_model()
 
 	GLuint shader_texture_color_id; // set by shader_init_model()
+};
 
-} Model_Info_For_Shading;
 
-
-typedef struct Animated_Model_Info_For_Shading {
+struct Animated_Model_Info_For_Shading {
 	Animated_Model model;     // needs be set by user
 	char* texture_color_path; // optional set by user
 
@@ -53,8 +52,7 @@ typedef struct Animated_Model_Info_For_Shading {
 	GLuint shader_vbo[MAX_FRAMES_PER_ANIMATION]; // set by shader_init_model()
 
 	GLuint shader_texture_color_id; // set by shader_init_model()
-
-} Animated_Model_Info_For_Shading;
+};
 
 
 // send data to shader

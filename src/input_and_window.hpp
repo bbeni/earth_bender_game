@@ -37,7 +37,7 @@ enum Modifier_Flags : uint32_t {
 
 enum class Key_Code : char32_t;
 
-typedef struct Event {
+struct Event {
 	Event_Type	type;
 	Key_Code	key_code;
 	bool		key_pressed;
@@ -48,13 +48,13 @@ typedef struct Event {
 	bool		printable;
 
 	float		wheel_delta; // MOUSE_WHEEL_V, MOUSE_WHEEL_H events
-} Event;
+};
 
 #define MAX_EVENTS 1000
-typedef struct Events_Array {
+struct Events_Array {
 	Event data[MAX_EVENTS];
 	int count = 0;
-} Events_Array;
+};
 
 // globals to interact with the input...
 
@@ -93,25 +93,25 @@ void event_add(Event event);
 
 // window functions
 
-typedef struct Window_Info {
+struct Window_Info {
 	HWND window_handle;
 	HDC hdc;
 	HGLRC gl_context;
 
-} Window_Info;
+};
 
 Window_Info create_window(int width, int height);
 void destroy_window(HWND hwnd);
-typedef struct Window_Info_For_Restore;
+struct Window_Info_For_Restore;
 Vec2 toggle_fullscreen(HWND hwnd, bool want_fullscreen, Window_Info_For_Restore* info);
 
 // internal
 
-typedef struct Window_Info_For_Restore {
+struct Window_Info_For_Restore {
 	RECT windows_rectangle;
 	int32_t style;
 	int32_t extended_style;
-} Window_Info_For_Restore;
+};
 
 LRESULT CALLBACK my_window_proc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 

@@ -14,7 +14,7 @@ enum class Tile_Type {
 };
 
 
-typedef struct Tile {
+struct Tile {
 	int height;
 	Tile_Type type;
 	bool block_walking;
@@ -24,9 +24,9 @@ typedef struct Tile {
 #define FLOOR_W 40
 #define FLOOR_D 40
 
-typedef struct Floor {
+struct Floor {
 	Tile tiles[FLOOR_D][FLOOR_W];
-} Floor;
+};
 
 enum class Action {
 	IDLE,
@@ -34,7 +34,7 @@ enum class Action {
 	WALKING,
 };
 
-typedef struct Player {
+struct Player {
 	Vec3  pos;
 	float direction_angle;
 	Vec3  velocity;
@@ -47,7 +47,7 @@ typedef struct Player {
 	float turn_speed;
 	float fov;
 
-} Player;
+};
 
 void generate_floor(Floor* floor);
 

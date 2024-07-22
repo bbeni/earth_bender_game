@@ -8,19 +8,19 @@
 
 #define DEG_TO_RAD M_PI / 180
 
-typedef struct Vec4 {
+struct Vec4 {
 	float x, y, z, w;
-} Vec4;
+};
 
-typedef struct Vec3 {
+struct Vec3 {
 	float x, y, z;
 	Vec3 operator+(const Vec3& other) const;
 	Vec3 operator-(const Vec3& other) const;
 	Vec3 operator*(float f) const;
 	bool operator!=(const Vec3& other) const;
-} Vec3;
+};
 
-typedef struct Vec2 {
+struct Vec2 {
 	float x, y;
 	Vec2 operator+(const Vec2& other) const;
 	Vec2 operator-(const Vec2& other) const;
@@ -28,7 +28,7 @@ typedef struct Vec2 {
 	bool operator!=(const Vec2& other) const;
 	Vec2& operator+=(const Vec2& other);
 	Vec2& operator-=(const Vec2& other);
-} Vec2;
+};
 
 void clamp(float* v, float lower, float upper);
 void clamp(int* v, int lower, int upper);
@@ -55,7 +55,7 @@ float length(const Vec2& vec);
 
 
 
-typedef struct Mat4 {
+struct Mat4 {
 	// column major format (looks flipped here)
 
 	float u11, u21, u31, u41;
@@ -65,7 +65,7 @@ typedef struct Mat4 {
 
 	Mat4 operator*(const Mat4& other) const;
 	Vec4 operator*(const Vec4& other) const;
-} Mat4;
+};
 
 
 extern const Mat4 mat4_unit;
