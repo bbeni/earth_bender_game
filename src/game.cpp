@@ -42,29 +42,23 @@ void generate_floor(Floor* floor) {
 				if (j == 10) {
 					t->type = Tile_Type::STONE;
 					t->height = 3;
-				}
-
-				else {
+				} else {
 					t->type = Tile_Type::WATER;
 					t->block_walking = true;
 				}
-			}
-			else {
+			} else {
 				if (j == 9 || j == 10 || j == 11) {
 					t->type = Tile_Type::SAND;
 					t->height = 1;
-				}
-				else if (j == 12) {
+				} else if (j == 12) {
 					t->type = Tile_Type::STONE;
 					t->height = 1;
 					t->ramp_direction = Orientation::SOUTH;
-				}
-				else if (j == 8) {
+				} else if (j == 8) {
 					t->type = Tile_Type::STONE;
 					t->height = 1;
 					t->ramp_direction = Orientation::NORTH;
-				}
-				else {
+				} else {
 					t->type = Tile_Type::GRASS;
 				}
 			}

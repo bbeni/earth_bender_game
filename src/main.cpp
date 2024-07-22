@@ -7,157 +7,157 @@
 
 int main() {
 
-    int width = 1080;
-    int height = 720;
+	int width = 1080;
+	int height = 720;
 
-    Window_Info window_info = create_window(1080, 720);
-    backend_init(&window_info);
+	Window_Info window_info = create_window(1080, 720);
+	backend_init(&window_info);
 
-    Window_Info_For_Restore saved_window = { 0 };
+	Window_Info_For_Restore saved_window = { 0 };
 
-    bool quit = false;
-    bool fullscreen = false;
+	bool quit = false;
+	bool fullscreen = false;
 
-    float shake_timer = 0.0f;
+	float shake_timer = 0.0f;
 
-    Floor floor = {0};
-    generate_floor(&floor);
+	Floor floor = {0};
+	generate_floor(&floor);
 
-    Vec4 color = { 1.0, 0.5, 0.0, 1.0 };
+	Vec4 color = { 1.0, 0.5, 0.0, 1.0 };
 
-    init_models_for_drawing();
-    draw_floor(&floor);
+	init_models_for_drawing();
+	draw_floor(&floor);
 
-    Player player = { 0 };
-    player.pos = Vec3{1.0f, 1.0f, 0.5f };
-    player.direction_angle = 0.0f;
-    
-    player.turn_speed = 6.0f;
-    player.walk_speed = 4.0f;
+	Player player = { 0 };
+	player.pos = Vec3{1.0f, 1.0f, 0.5f };
+	player.direction_angle = 0.0f;
 
-    while (!quit) {
+	player.turn_speed = 6.0f;
+	player.walk_speed = 4.0f;
 
-        update_window_events();
+	while (!quit) {
 
-        player.current_action = Action::IDLE;
+		update_window_events();
 
-        Vec2 direction = { 0 };
+		player.current_action = Action::IDLE;
 
-        
-        if ((get_key_flags_state(VK_UP) | get_key_flags_state((uint32_t)Key_Code::W)) & Key_State_Flags::DOWN ) {
-            player.current_action = Action::WALKING;
-            direction += Vec2{ 1, 1 };
-        }
+		Vec2 direction = { 0 };
 
-        if ((get_key_flags_state(VK_DOWN) | get_key_flags_state((uint32_t)Key_Code::S)) & Key_State_Flags::DOWN) {
-            player.current_action = Action::WALKING;
-            direction += Vec2{ -1, -1 };
-        }
+		
+		if ((get_key_flags_state(VK_UP) | get_key_flags_state((uint32_t)Key_Code::W)) & Key_State_Flags::DOWN ) {
+			player.current_action = Action::WALKING;
+			direction += Vec2{ 1, 1 };
+		}
 
-        if ((get_key_flags_state(VK_RIGHT) | get_key_flags_state((uint32_t)Key_Code::D)) & Key_State_Flags::DOWN) {
-            player.current_action = Action::WALKING;
-            direction += Vec2{ 1, -1};
-        }
+		if ((get_key_flags_state(VK_DOWN) | get_key_flags_state((uint32_t)Key_Code::S)) & Key_State_Flags::DOWN) {
+			player.current_action = Action::WALKING;
+			direction += Vec2{ -1, -1 };
+		}
 
-        if ((get_key_flags_state(VK_LEFT) | get_key_flags_state((uint32_t)Key_Code::A)) & Key_State_Flags::DOWN) {
-            player.current_action = Action::WALKING;
-            direction += Vec2{ -1, 1 };
-        }
+		if ((get_key_flags_state(VK_RIGHT) | get_key_flags_state((uint32_t)Key_Code::D)) & Key_State_Flags::DOWN) {
+			player.current_action = Action::WALKING;
+			direction += Vec2{ 1, -1};
+		}
 
-        normalize_or_y_axis(&direction);
+		if ((get_key_flags_state(VK_LEFT) | get_key_flags_state((uint32_t)Key_Code::A)) & Key_State_Flags::DOWN) {
+			player.current_action = Action::WALKING;
+			direction += Vec2{ -1, 1 };
+		}
 
-        if (player.current_action == Action::WALKING) 
-            player.target_direction_angle = angle_between(direction, Vec2{0, 1});
+		normalize_or_y_axis(&direction);
 
-        for (int i = 0; i < events_this_frame.count; i++) {
-            Event event = events_this_frame.data[i];
-            printf("event type:%d key_state:0x%x\n", event.type, event.key_state);
-            
-            if (event.type == QUIT) quit = true;
+		if (player.current_action == Action::WALKING) 
+			player.target_direction_angle = angle_between(direction, Vec2{0, 1});
 
-            // Action on Press Key / Click
-            if ((event.type == KEYBOARD) && (event.key_state & BEGIN)) {
-                if (event.key_code == Key_Code::ESCAPE) {
-                    quit = true;
-                }
+		for (int i = 0; i < events_this_frame.count; i++) {
+			Event event = events_this_frame.data[i];
+			printf("event type:%d key_state:0x%x\n", event.type, event.key_state);
+			
+			if (event.type == QUIT) quit = true;
 
-                if (event.key_code == Key_Code::LEFT_BTN) {
-                    color.x = (float)rand() / RAND_MAX;
-                    color.y = (float)rand() / RAND_MAX;
-                    color.z = (float)rand() / RAND_MAX;
-                    shake_timer = 0.5f;
-                }
+			// Action on Press Key / Click
+			if ((event.type == KEYBOARD) && (event.key_state & BEGIN)) {
+				if (event.key_code == Key_Code::ESCAPE) {
+					quit = true;
+				}
 
-                if (event.key_code == Key_Code::F && (event.modifiers & CTRL)) {
-                    fullscreen = !fullscreen;
-                    Vec2 new_size = toggle_fullscreen(window_info.window_handle, fullscreen, &saved_window);
-                    width = new_size.x;
-                    height = new_size.y;
-                    adjust_viewport_size(width, height);
-                }
-            }
-        }
+				if (event.key_code == Key_Code::LEFT_BTN) {
+					color.x = (float)rand() / RAND_MAX;
+					color.y = (float)rand() / RAND_MAX;
+					color.z = (float)rand() / RAND_MAX;
+					shake_timer = 0.5f;
+				}
 
-        events_reset();
+				if (event.key_code == Key_Code::F && (event.modifiers & CTRL)) {
+					fullscreen = !fullscreen;
+					Vec2 new_size = toggle_fullscreen(window_info.window_handle, fullscreen, &saved_window);
+					width = new_size.x;
+					height = new_size.y;
+					adjust_viewport_size(width, height);
+				}
+			}
+		}
 
-        
-        update_player(&player, &floor);
+		events_reset();
 
-        //printf("action %d, pos (%f %f), target_angle %f, angle %f\n", player.current_action, player.pos.x, player.pos.x, player.target_direction_angle, player.direction_angle);
-        
-        clear_it(0.25f, 0.35f, 0.85f, 1.0f);
+		
+		update_player(&player, &floor);
 
-        draw_minimap(&floor, &player);
-        draw_player(&player);
-        draw_floor(&floor);
-        draw_stone(&player);
+		//printf("action %d, pos (%f %f), target_angle %f, angle %f\n", player.current_action, player.pos.x, player.pos.x, player.target_direction_angle, player.direction_angle);
+		
+		clear_it(0.25f, 0.35f, 0.85f, 1.0f);
 
-        float shake_amount = shake_timer;
-        Vec3 offset = { shake_amount * 0.02f*cosf(get_time() * 102), shake_amount * 0.03f*sinf(get_time() * 109), 0 };
-        Mat4 translation = matrix_translation(offset);
-        Mat4 scale = matrix_scale(lerp(1.0f, 0.95f, shake_amount*shake_amount));
-        
-        glUseProgram(immediate_shader_color.gl_id);
-        shader_uniform_set(immediate_shader_color.gl_id, "projection", translation*scale);
+		draw_minimap(&floor, &player);
+		draw_player(&player);
+		draw_floor(&floor);
+		draw_stone(&player);
 
-        if (shake_timer > 0.0f) {
-            shake_timer -= get_frame_time();
-            if (shake_timer < 0.0f) {
-                shake_timer = 0.0f;
-            }
-        }
+		float shake_amount = shake_timer;
+		Vec3 offset = { shake_amount * 0.02f*cosf(get_time() * 102), shake_amount * 0.03f*sinf(get_time() * 109), 0 };
+		Mat4 translation = matrix_translation(offset);
+		Mat4 scale = matrix_scale(lerp(1.0f, 0.95f, shake_amount*shake_amount));
+		
+		glUseProgram(immediate_shader_color.gl_id);
+		shader_uniform_set(immediate_shader_color.gl_id, "projection", translation*scale);
 
-        Vec2 pos = { (float)2*mouse_x/width - 1.0f, -(float)2*mouse_y/height + 1.0f };
-        Vec2 size = { 0.05f, 0.075f };
+		if (shake_timer > 0.0f) {
+			shake_timer -= get_frame_time();
+			if (shake_timer < 0.0f) {
+				shake_timer = 0.0f;
+			}
+		}
 
-        immediate_quad(pos, size, color);
+		Vec2 pos = { (float)2*mouse_x/width - 1.0f, -(float)2*mouse_y/height + 1.0f };
+		Vec2 size = { 0.05f, 0.075f };
 
-        Vec4 fg_color = color;
-        size.x += 0.02f;
-        size.y += 0.03f;
-        fg_color.x += 0.2f;
-        fg_color.y += 0.2f;
-        fg_color.z += 0.2f;
-      
-        clamp(&fg_color.x, 0, 1);
-        clamp(&fg_color.y, 0, 1);
-        clamp(&fg_color.z, 0, 1);
+		immediate_quad(pos, size, color);
 
-        immediate_quad(pos, size, fg_color);
-        
-        immediate_send();
+		Vec4 fg_color = color;
+		size.x += 0.02f;
+		size.y += 0.03f;
+		fg_color.x += 0.2f;
+		fg_color.y += 0.2f;
+		fg_color.z += 0.2f;
 
-        swap_buffers(&window_info);
+		clamp(&fg_color.x, 0, 1);
+		clamp(&fg_color.y, 0, 1);
+		clamp(&fg_color.z, 0, 1);
 
-        //printf("ctrl:%d shift:%d alt:%d meta:%d \n", ctrl_state, shift_state, alt_state, meta_state);
-        //printf("get_time() %f frame_time %f FPS %.2f \n", get_time(), get_frame_time(), get_fps());
+		immediate_quad(pos, size, fg_color);
 
-    }
+		immediate_send();
 
-    destroy_window(window_info.window_handle);
+		swap_buffers(&window_info);
+
+		//printf("ctrl:%d shift:%d alt:%d meta:%d \n", ctrl_state, shift_state, alt_state, meta_state);
+		//printf("get_time() %f frame_time %f FPS %.2f \n", get_time(), get_frame_time(), get_fps());
+
+	}
+
+	destroy_window(window_info.window_handle);
 }
 
 int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmdshow)
 {
-    return main();
+	return main();
 }
