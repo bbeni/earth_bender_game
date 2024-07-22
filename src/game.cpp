@@ -227,7 +227,7 @@ void set_player_model_view_projection(Player* p) {
 
 	// Projection
 	float near_plane = 0.01f;
-	float far_plane = 1000.0f;
+	float far_plane = 100.0f;
 	Mat4 projection = matrix_perspective(p->fov, 1.4f, near_plane, far_plane);
 	shader_uniform_set(shader_brdf.gl_id, "projection", projection);
 	shader_uniform_set(shader_phong.gl_id, "projection", projection);
@@ -253,21 +253,16 @@ void draw_player(Player* p) {
 }
 
 void update_player(Player* p, Floor* floor) {
-	float frame_time = get_frame_time();
 
-	/*
-	if (p->desired_direction.x != p->direction.x || p->desired_direction.y != p->direction.y) {
-		move_towards(&p->direction, p->desired_direction, p->turn_speed, frame_time);
-		normalize(&p->direction);
-	}*/
+	float frame_time = (float)get_frame_time();
 
 	float angle = p->direction_angle;
-	float target_angle = p->target_direction_angle;
+	float target_angle = p->target_direction_angle - 0.001f;
 
 
-	if (fabs(p->direction_angle - p->target_direction_angle) > 0.00001f) {
+	if (fabs(angle - target_angle) > 0.00001f) {
 		p->current_action = Action::TURNING;
-		move_towards_on_circle(&p->direction_angle, p->target_direction_angle, p->turn_speed, frame_time);
+		move_towards_on_circle(&p->direction_angle, target_angle, p->turn_speed, frame_time);
 	}
 
 	Vec3 direction = Vec3{ sinf(angle), cosf(angle) };
@@ -281,8 +276,9 @@ void update_player(Player* p, Floor* floor) {
 
 	p->velocity = direction * p->walk_speed;
 
+
 	if (p->current_action == Action::WALKING) {
-		Vec3 desired_pos = p->pos + p->velocity * (float)get_frame_time();
+		Vec3 desired_pos = p->pos + p->velocity * frame_time;
 
 		int current_i = (int)floorf(p->pos.x + 0.5f);
 		int current_j = (int)floorf(p->pos.y + 0.5f);
@@ -300,12 +296,10 @@ void update_player(Player* p, Floor* floor) {
 			if ((current_i >= 0 && current_i < FLOOR_W) && (current_j >= 0 && current_j < FLOOR_D)) {
 				current_tile = &floor->tiles[current_i][current_j];
 			}
-
 		}
 
-
+		// snap the x or y cordinate to previous tiles
 		if (current_tile != NULL && (desired_tile == NULL || desired_tile->block_walking)) {
-			// snap the x or y cordinate to previous
 			int d_i = desired_i - current_i;
 			int d_j = desired_j - current_j;
 
@@ -317,42 +311,39 @@ void update_player(Player* p, Floor* floor) {
 				desired_pos.y = p->pos.y;
 			}
 
-			// we are allowed to walk now
-			p->pos = desired_pos;
-			p->pos.z = current_tile->height * 0.5f + 0.5f;
-
-		} 
-
+			desired_pos.z = current_tile->height * 0.5f + 0.5f;
+		}
+		
 		if (desired_tile != NULL && !desired_tile->block_walking) {
 
-			// we are allowed to walk
-			p->pos = desired_pos;
-			p->pos.z = desired_tile->height * 0.5f + 0.5f;
+			desired_pos.z = desired_tile->height * 0.5f + 0.5f;
 
 			if (desired_tile->ramp_direction != Orientation::NO_ORIENTATION) {
 
-				float x = p->pos.x - floorf(p->pos.x);
-				float y = p->pos.y - floorf(p->pos.y);
+				float x = desired_pos.x - floorf(desired_pos.x + 0.5f) + 0.5f;
+				float y = desired_pos.y - floorf(desired_pos.y + 0.5f) + 0.5f;
 
 				switch (desired_tile->ramp_direction)
 				{
 				case Orientation::EAST:
-					p->pos.z += lerp(-0.5f, 0.0f, x);
+					desired_pos.z += lerp(-0.5f, 0.0f, x);
 					break;
 				case Orientation::WEST:
-					p->pos.z += lerp(0.0f, -0.5f, x);
+					desired_pos.z += lerp(0.0f, -0.5f, x);
 					break;
 				case Orientation::NORTH:
-					p->pos.z += lerp(-0.5f, 0.0f, y);
+					desired_pos.z += lerp(-0.5f, 0.0f, y);
 					break;
 				case Orientation::SOUTH:
-					p->pos.z += lerp(0.0f, -0.5f, y);
+					desired_pos.z += lerp(0.0f, -0.5f, y);
 					break;
 				default:
 					break;
 				}
 			}
 		}
+
+		p->pos = desired_pos;
 	}
 }
 

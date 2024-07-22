@@ -100,29 +100,17 @@ int main() {
 
         events_reset();
 
-
-        float r = sinf(get_time() * 3.0f) * 0.5f + 0.5f;
-        float g = sinf(get_time() * 4.3f) * 0.5f + 0.5f;
-
-        clamp(&r, 0.0f, 1.0f);
-
-        //clear_it(r, 0.2f, g, 1.0f);
-        clear_it(0.25f, 0.35f, 0.85f, 1.0f);
-        //clear_it(0.0f, 0.0f, 0.0f, 1.0f);
-
+        
         update_player(&player, &floor);
 
+        //printf("action %d, pos (%f %f), target_angle %f, angle %f\n", player.current_action, player.pos.x, player.pos.x, player.target_direction_angle, player.direction_angle);
+        
+        clear_it(0.25f, 0.35f, 0.85f, 1.0f);
+
         draw_minimap(&floor, &player);
-
-
-        //update_phong(get_time());
         draw_player(&player);
-
-
         draw_floor(&floor);
-
         draw_stone(&player);
-
 
         float shake_amount = shake_timer;
         Vec3 offset = { shake_amount * 0.02f*cosf(get_time() * 102), shake_amount * 0.03f*sinf(get_time() * 109), 0 };
@@ -141,9 +129,6 @@ int main() {
 
         Vec2 pos = { (float)2*mouse_x/width - 1.0f, -(float)2*mouse_y/height + 1.0f };
         Vec2 size = { 0.05f, 0.075f };
-
-
-        glUseProgram(immediate_shader_color.gl_id);
 
         immediate_quad(pos, size, color);
 

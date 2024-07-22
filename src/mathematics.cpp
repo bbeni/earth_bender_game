@@ -54,13 +54,19 @@ void move_towards(Vec3* vec, const Vec3& target, float speed, float dt) {
 	move_towards(&vec->z, target.z, speed, dt);
 }
 
+// move an angle to a range [-pi, pi) closer to the mapped target angle the shorter way around the circle
+// @Bug somehow there is and edge case where the target is PI and we go to -PI and never set to PI but it should flip it here
+// for now just assume the user of this function is not dependent on the wrap around behaviour
 void move_towards_on_circle(float* angle, float target,  float speed, float dt) {
-	*angle = fmod(*angle + M_PI, 2 * M_PI) - M_PI; // map to [-pi, pi)
-	if (*angle >= M_PI) {
+
+	//*angle = fmod(*angle + M_PI, 2 * M_PI) - M_PI; // map to [-pi, pi)
+	// we should use fmod.. but for now thats ok what is done here
+	// maybe I am using fmod the wrong way.. the asserts fired using fmod..
+	while (*angle >= M_PI) {
 		*angle -= 2 * M_PI;
 	}
 	
-	if (*angle < -M_PI) {
+	while (*angle < -M_PI) {
 		*angle += 2 * M_PI;
 	}
 
@@ -98,6 +104,18 @@ void normalize_or_y_axis(Vec2* v) {
 
 float dot(const Vec3& a, const Vec3& b) {
 	return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+
+float dot(const Vec2& a, const Vec2& b) {
+	return a.x * b.x + a.y * b.y;
+}
+
+float length(const Vec3& vec) {
+	return sqrtf(dot(vec, vec));
+}
+
+float length(const Vec2& vec) {
+	return sqrtf(dot(vec, vec));
 }
 
 void normalize_or_z_axis(Vec3* v) {

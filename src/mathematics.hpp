@@ -39,13 +39,20 @@ void move_towards(Vec3* vec, const Vec3& target, float speed, float dt);
 // move towards the closer angle mapped from -pi to pi
 void move_towards_on_circle(float* angle, float target,  float speed, float dt);
 
+// common vector stuff
 float dot(const Vec3& a, const Vec3& b);
+float dot(const Vec2& a, const Vec2& b);
+float length(const Vec3& vec);
+float length(const Vec2& vec);
+
 Vec3 cross(const Vec3& a, const Vec3& b);
 void normalize_or_z_axis(Vec3* v);
 
 // -pi to pi
 float angle_between(const Vec2& a, const Vec2& b);
 void normalize_or_y_axis(Vec2* v);
+float length(const Vec2& vec);
+
 
 
 typedef struct Mat4 {
