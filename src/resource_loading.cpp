@@ -1,14 +1,17 @@
 #pragma warning(disable:4996) // ty microsoft -> to be able to use fopen
 #include "resource_loading.hpp"
+#include "catalogs.hpp"
 
 #include <cassert>
-//#include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
 #include <errno.h>
 #include <ctype.h>
 #include <errno.h>
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_libraries/stb_image.h"
 
 // adapted function from nob.h github.com/tsoding/musializer 
 // returns false on failure, should print the error
@@ -77,4 +80,22 @@ bool load_resource_from_file(const char* file_path, int* out_size, char** out_da
 bool load_resource(const char* file_path, int* out_size, char** out_data) {
 	// TODO implement package resources system
 	return load_resource_from_file(file_path, out_size, out_data); // in case we didn't find it
+}
+
+Image load_image_resource(char* file_path) {
+	int w, h;
+	int n;
+	stbi_set_flip_vertically_on_load(true);
+
+	// @MemoryLeak call free after we load to gpu?
+	// stbi_image_free(image_data);
+	// use the load_from_memory with load_resource..
+	unsigned char* image_data = stbi_load(file_path, &w, &h, &n, STBI_rgb);
+
+	if (image_data == NULL) {
+		printf("Error: could not load image '%s'\n", file_path);
+		return Image{ 0 };
+	}
+
+	return Image{ w, h, n, image_data };
 }

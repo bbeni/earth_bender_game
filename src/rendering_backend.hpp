@@ -7,6 +7,7 @@
 #include "data_stuff.h"
 #include "shaders.hpp"
 #include "models.hpp"
+#include "catalogs.hpp"
 
 void create_gl_context(Window_Info* info, int major_version, int minor_version);
 void destroy_gl_context(Window_Info* info);
@@ -29,31 +30,29 @@ void immediate_send();
 
 struct Model_Info_For_Shading {
 	Model model;              // needs be set by user
-	char* texture_color_path; // optional set by user
+	Texture* texture_color;   // optional set by user
 
 	bool initialized;  // set by shader_init_model()
 	Material_Shader* shader;    // set by shader_init_model()
 
 	GLuint shader_vao; // set by shader_init_model()
 	GLuint shader_vbo; // set by shader_init_model()
-
-	GLuint shader_texture_color_id; // set by shader_init_model()
 };
 
 
 struct Animated_Model_Info_For_Shading {
 	Animated_Model model;     // needs be set by user
-	char* texture_color_path; // optional set by user
+	Texture* texture_color;   // optional set by user
 
 	bool initialized;  // set by shader_init_model()
 	Material_Shader* shader;    // set by shader_init_model()
 
 	GLuint shader_vao[MAX_FRAMES_PER_ANIMATION]; // set by shader_init_model()
 	GLuint shader_vbo[MAX_FRAMES_PER_ANIMATION]; // set by shader_init_model()
-
-	GLuint shader_texture_color_id; // set by shader_init_model()
 };
 
+
+GLuint load_texture_gpu(const Image* image);
 
 // send data to shader
 void shader_init_model(Material_Shader* shader, Model_Info_For_Shading* model_info);

@@ -98,8 +98,13 @@ Vec4 color_from_tile_type(Tile_Type type) {
 	}
 }
 
+
 Animated_Model_Info_For_Shading player_model_info = { 0 };
 Model_Info_For_Shading stone_model_info = { 0 };
+
+Model_Info_For_Shading stone_tile_model_info = { 0 };
+Model_Info_For_Shading lava_tile_model_info = { 0 };
+Model_Info_For_Shading stone_tile_ramp_model_info = { 0 };
 
 Model_Info_For_Shading base_tile_model_info = { 0 };
 Model_Info_For_Shading north_ramp_model_info = { 0 };
@@ -110,20 +115,36 @@ Model_Info_For_Shading west_ramp_model_info = { 0 };
 
 void init_models_for_drawing() {
 
+	if (!init_texture_catalog_disk_and_gpu()) {
+		printf("Error: failed to load some textures..\n");
+		exit(1);
+	}
+
 	//construct_cube_triangles(&player_model_info.model);
 	//construct_normals(&player_model_info.model);
 
 	stone_model_info.model.mesh = load_mesh_bada_file("../resources/3d_models/stone_block.bada");
-	stone_model_info.texture_color_path = (char*)"../resources/3d_models/stone_block_color.jpg";
+	stone_model_info.texture_color = &g_texture_catalog.names.stone_block_color;
 	shader_init_model(&shader_brdf, &stone_model_info);
 
+	stone_tile_model_info.model.mesh = load_mesh_bada_file("../resources/3d_models/stone_tile.bada");
+	stone_tile_model_info.texture_color = &g_texture_catalog.names.stone_tile_color;
+	shader_init_model(&shader_brdf, &stone_tile_model_info);
+
+	lava_tile_model_info.model.mesh = load_mesh_bada_file("../resources/3d_models/stone_tile.bada");
+	lava_tile_model_info.texture_color = &g_texture_catalog.names.lava_tile_color;
+	shader_init_model(&shader_brdf, &lava_tile_model_info);
+
+	stone_tile_ramp_model_info.model.mesh = load_mesh_bada_file("../resources/3d_models/stone_tile_ramp.bada");
+	stone_tile_ramp_model_info.texture_color = &g_texture_catalog.names.stone_tile_color;
+	shader_init_model(&shader_brdf, &stone_tile_ramp_model_info);
 	
 	//player_model_info.model.mesh = load_mesh_bada_file("../resources/3d_models/earth_bender.bada");
 	//player_model_info.texture_color_path = (char*)"../resources/3d_models/earth_bender_color.jpg";
 	//shader_init_model(&shader_brdf, &player_model_info);
 
 	player_model_info.model = load_anim_bada_file("../resources/3d_models/earth_bender_anim.bada");
-	player_model_info.texture_color_path = (char*)"../resources/3d_models/earth_bender_color.jpg";
+	player_model_info.texture_color = &g_texture_catalog.names.earth_bender_color;
 	shader_init_animated_model(&shader_brdf, &player_model_info);
 
 	construct_tile_triangles(&base_tile_model_info.model);
@@ -158,7 +179,11 @@ void draw_stone(Bender *p) {
 
 void draw_floor(Level* floor) {
 
-	Mat4 model_rotation = matrix_from_basis_vectors({ 1,0,0 }, { 0,1,0 }, { 0,0,1 });
+	Mat4 model_rotation_0 = matrix_from_basis_vectors({ 1,0,0 }, { 0,1,0 }, { 0,0,1 });
+	Mat4 model_rotation_90 = matrix_from_basis_vectors({ 0,1,0 }, { -1,0,0 }, { 0,0,1 });
+	Mat4 model_rotation_180 = matrix_from_basis_vectors({ -1,0,0 }, { 0,-1,0 }, { 0,0,1 });
+	Mat4 model_rotation_270 = matrix_from_basis_vectors({ 0,-1,0 }, { 1,0,0 }, { 0,0,1 });
+
 	Mat4 translation = matrix_translation(Vec3{ 2.0f, 1.0f, 5.0f });
 
 	for (int i = 0; i < FLOOR_W; i++) {
@@ -168,36 +193,54 @@ void draw_floor(Level* floor) {
 
 			if (tile.type == Tile_Type::AIR) continue;
 
-			float elevation = 0.5f * (tile.height - (int)(tile.ramp_direction != Ramp_Orientation::FLAT) );
+			float elevation = 0.5f * tile.height;
 
-			Vec4 color =color_from_tile_type(tile.type);
-			shader_uniform_set(shader_phong.gl_id, "object_color", Vec3{ color.x, color.y, color.z });
+			//Vec4 color =color_from_tile_type(tile.type);
+			//shader_uniform_set(shader_phong.gl_id, "object_color", Vec3{ color.x, color.y, color.z });
+
+			auto flat_tile_model = &stone_tile_model_info;
 
 			translation = matrix_translation(Vec3{ 1.0f * i, 1.0f * j, elevation});
-			Mat4 model = translation * model_rotation;
+			Mat4 model = translation;
 			shader_uniform_set(shader_phong.gl_id, "model", model);
+			shader_uniform_set(shader_brdf.gl_id, "model", model);
 
 			if (tile.type == Tile_Type::LAVA) {
 				float ambient_strength = 0.9f;
 				shader_uniform_set(shader_phong.gl_id, "ambient_strength", ambient_strength);
+				shader_uniform_set(shader_brdf.gl_id, "ambient_strength", ambient_strength);
+
+				flat_tile_model = &lava_tile_model_info;
 			}
 
 			switch (tile.ramp_direction) {
-			case Ramp_Orientation::NORTH:
-				shader_draw_call(&north_ramp_model_info); break;
-			case Ramp_Orientation::EAST:
-				shader_draw_call(&east_ramp_model_info); break;
 			case Ramp_Orientation::SOUTH:
-				shader_draw_call(&south_ramp_model_info); break;
+				shader_draw_call(&stone_tile_ramp_model_info);
+				break;
+			case Ramp_Orientation::EAST:
+				shader_uniform_set(shader_brdf.gl_id, "model", model * model_rotation_90);
+				shader_draw_call(&stone_tile_ramp_model_info);
+				//shader_draw_call(&east_ramp_model_info);
+				break;
+			case Ramp_Orientation::NORTH:
+				shader_uniform_set(shader_brdf.gl_id, "model", model * model_rotation_180);
+				shader_draw_call(&stone_tile_ramp_model_info);
+				//shader_draw_call(&south_ramp_model_info);
+				break;
 			case Ramp_Orientation::WEST:
-				shader_draw_call(&west_ramp_model_info); break;
+				shader_uniform_set(shader_brdf.gl_id, "model", model * model_rotation_270);
+				shader_draw_call(&stone_tile_ramp_model_info);
+				//shader_draw_call(&west_ramp_model_info);
+				break;
 			default:
-				shader_draw_call(&base_tile_model_info);
+				shader_draw_call(flat_tile_model);
+				break;
 			}
 
 			if (tile.type == Tile_Type::LAVA) {
 				float ambient_strength = 0.05f;
 				shader_uniform_set(shader_phong.gl_id, "ambient_strength", ambient_strength);
+				shader_uniform_set(shader_brdf.gl_id, "ambient_strength", ambient_strength);
 			}
 
 		}

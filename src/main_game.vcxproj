@@ -140,6 +140,7 @@
     <ClCompile Include="mathematics.cpp" />
     <ClCompile Include="models.cpp" />
     <ClCompile Include="rendering_backend.cpp" />
+    <ClCompile Include="catalogs.cpp" />
     <ClCompile Include="resource_loading.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="shaders.cpp" />
@@ -153,6 +154,7 @@
     <ClInclude Include="mathematics.hpp" />
     <ClInclude Include="models.hpp" />
     <ClInclude Include="rendering_backend.hpp" />
+    <ClInclude Include="catalogs.hpp" />
     <ClInclude Include="resource_loading.hpp" />
     <ClInclude Include="shaders.hpp" />
     <ClInclude Include="stb_libraries\stb_image.h" />
