@@ -121,6 +121,7 @@ MULTILINE_STRING(
 
 Material_Shader shader_phong;
 Material_Shader shader_brdf;
+Material_Shader shader_water;
 
 // TODO: save loactions in hash_table
 void shader_uniform_set(GLuint shader_id, const char* value_name, const Mat4& mat4) {
@@ -169,7 +170,9 @@ void shader_uniform_set(GLuint shader_id, const char* value_name, const float va
 Vec3 light_direction = { 4.0f, -5.5f, -5.5f };
 
 void init_phong_uniforms() {
-	glUseProgram(shader_phong.gl_id);
+
+	GLuint shader_id = shader_phong.gl_id;
+	glUseProgram(shader_id);
 
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
@@ -194,23 +197,18 @@ void init_phong_uniforms() {
 	// Model transformation
 	Mat4 model = matrix_scale(1.0f);
 
-	shader_uniform_set(shader_phong.gl_id, "projection", projection);
-	shader_uniform_set(shader_phong.gl_id, "model", model);
-	shader_uniform_set(shader_phong.gl_id, "view", view);
-	shader_uniform_set(shader_phong.gl_id, "light_direction", light_direction);
-	shader_uniform_set(shader_phong.gl_id, "light_color", light_color);
-	shader_uniform_set(shader_phong.gl_id, "light_strength", light_strength);
-	//shader_uniform_set(shader_phong.gl_id, "ambient_strength", ambient_strength);
-	shader_uniform_set(shader_phong.gl_id, "object_color", object_color);
+	shader_uniform_set(shader_id, "projection", projection);
+	shader_uniform_set(shader_id, "model", model);
+	shader_uniform_set(shader_id, "view", view);
+	shader_uniform_set(shader_id, "light_direction", light_direction);
+	shader_uniform_set(shader_id, "light_color", light_color);
+	shader_uniform_set(shader_id, "light_strength", light_strength);
+	//shader_uniform_set(shader_id, "ambient_strength", ambient_strength);
+	shader_uniform_set(shader_id, "object_color", object_color);
 
 }
 
-
-void init_brdf_uniforms() {
-	glUseProgram(shader_phong.gl_id);
-
-	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LESS);
+void init_common_uniforms(GLuint shader_id) {
 
 	Vec3 light_color = { 0.95f, 0.8f, 0.7f };
 	float light_strength = 5.0f;
@@ -218,8 +216,7 @@ void init_brdf_uniforms() {
 	Vec3 object_color = { 0.7f, 0.9f, 0.3f };
 	float ambient_strength = 0.0f;
 
-	float time = 0.0f;
-
+	
 	Mat4 view = matrix_camera(Vec3{ -3.0f, 3.0f, -3.0f }, Vec3{ 1.0f, 0.0f, 1.0f }, Vec3{ 0.0f, 1.0f, 0.0f });
 
 	// Perspective projection
@@ -233,17 +230,38 @@ void init_brdf_uniforms() {
 	// Model transformation
 	Mat4 model = matrix_scale(1.0f);
 
-	shader_uniform_set(shader_brdf.gl_id, "projection", projection);
-	shader_uniform_set(shader_brdf.gl_id, "model", model);
-	shader_uniform_set(shader_brdf.gl_id, "view", view);
-	
-	shader_uniform_set(shader_brdf.gl_id, "light_direction", light_direction);
-	shader_uniform_set(shader_brdf.gl_id, "light_color", light_color);
-	shader_uniform_set(shader_brdf.gl_id, "light_strength", light_strength);
+	shader_uniform_set(shader_id, "projection", projection);
+	shader_uniform_set(shader_id, "model", model);
+	shader_uniform_set(shader_id, "view", view);
 
-	shader_uniform_set(shader_brdf.gl_id, "ambient_strength", ambient_strength);
-	
+	shader_uniform_set(shader_id, "light_direction", light_direction);
+	shader_uniform_set(shader_id, "light_color", light_color);
+	shader_uniform_set(shader_id, "light_strength", light_strength);
+
+	shader_uniform_set(shader_id, "ambient_strength", ambient_strength);
 }
+
+
+void init_brdf_uniforms() {
+	glUseProgram(shader_brdf.gl_id);
+
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
+	init_common_uniforms(shader_brdf.gl_id);
+}
+
+
+void init_water_uniforms() {
+	glUseProgram(shader_water.gl_id);
+
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
+
+	init_common_uniforms(shader_water.gl_id);
+
+	shader_uniform_set(shader_water.gl_id, "time", 0.5f);
+}
+
 
 GLuint load_shader_from_path(const char* source_path) {
 
@@ -290,4 +308,13 @@ void backend_create_shaders() {
 	shader_brdf.flags = Shader_Flags::USES_TEXTURE;
 	init_brdf_uniforms();
 
+	// water brdf
+	shader_water = { 0 };
+	shader_water.gl_id = load_shader_from_path("shaders/material_water.glsl");
+	shader_water.position_location = 0;
+	shader_water.normal_location = 1;
+	shader_water.uv_location = 2;
+
+	shader_water.flags = Shader_Flags::USES_TEXTURE;
+	init_water_uniforms();
 }

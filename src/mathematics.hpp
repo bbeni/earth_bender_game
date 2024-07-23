@@ -87,3 +87,8 @@ Mat4 matrix_camera(Vec3 pos, Vec3 looking_direction, Vec3 up);
 
 Mat4 matrix_perspective(float vertical_fov, float aspect, float near, float far);
 Mat4 matrix_perspective_orthographic(float left, float right, float top, float bottom, float near, float far);
+
+Mat4 model_rotation_0();
+Mat4 model_rotation_90();
+Mat4 model_rotation_180();
+Mat4 model_rotation_270();

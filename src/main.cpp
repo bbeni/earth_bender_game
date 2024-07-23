@@ -108,10 +108,10 @@ int main() {
 		clear_it(0.25f, 0.35f, 0.85f, 1.0f);
 
 		draw_minimap(&floor, &player);
-		draw_player(&player);
-		draw_floor(&floor);
-		draw_stone(&player);
 
+		draw_game(&player, &floor);
+
+		// ui stuff
 		float shake_amount = shake_timer;
 		Vec3 offset = { shake_amount * 0.02f*cosf(get_time() * 102), shake_amount * 0.03f*sinf(get_time() * 109), 0 };
 		Mat4 translation = matrix_translation(offset);

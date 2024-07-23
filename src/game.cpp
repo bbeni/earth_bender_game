@@ -3,11 +3,21 @@
 #include "shaders.hpp"
 
 
-void generate_floor(Level* floor) {
+void add_lower_tile(Level* level, Lower_Tile tile) {
+	if (level->n_lower_tiles >= sizeof(level->lower_tiles) / sizeof(level->lower_tiles[0])) {
+		printf("Error: failed to add another Lower_Tile in add_lower_tile() %u exeeded.\n", sizeof(level->lower_tiles) / sizeof(level->lower_tiles[0]));
+		return;
+	}
+
+	size_t i = level->n_lower_tiles++;
+	level->lower_tiles[i] = tile;
+}
+
+void generate_floor(Level* level) {
 	for (int i = 0; i < FLOOR_W; i++) {
 		for (int j = 0; j < FLOOR_D; j++) {
 
-			Tile* t = &floor->tiles[i][j];
+			Top_Tile* t = &level->top_tiles[i][j];
 
 			if (i*i + j*j > 1800) {
 				t->type = Tile_Type::AIR;
@@ -25,8 +35,16 @@ void generate_floor(Level* floor) {
 
 			if ((j > 23) && (i > 5) && (j < 29) && (i < 13)) {
 				t->type = Tile_Type::EARTH;
-				//t->block_walking = true;
 				t->height = 5;
+
+				// add a lava tile below
+				Lower_Tile lt = { 0 };
+				lt.type = Tile_Type::LAVA;
+				lt.height = -1;
+				lt.x = i;
+				lt.y = j;
+				
+				add_lower_tile(level, lt);
 				continue;
 			}
 
@@ -34,6 +52,15 @@ void generate_floor(Level* floor) {
 				t->type = Tile_Type::EARTH;
 				t->ramp_direction = Ramp_Orientation::EAST;
 				t->height = i;
+
+				// add a lava tile below
+				Lower_Tile lt = { 0 };
+				lt.type = Tile_Type::LAVA;
+				lt.height = 0;
+				lt.x = i;
+				lt.y = j;
+				add_lower_tile(level, lt);
+
 				continue;
 			}
 
@@ -42,9 +69,19 @@ void generate_floor(Level* floor) {
 				if (j == 10) {
 					t->type = Tile_Type::STONE;
 					t->height = 3;
+
+					// add a water tile below
+					Lower_Tile lt = { 0 };
+					lt.type = Tile_Type::WATER;
+					lt.height = 0;
+					lt.x = i;
+					lt.y = j;
+					add_lower_tile(level, lt);
+
 				} else {
 					t->type = Tile_Type::WATER;
 					t->block_walking = true;
+					t->height = 0;
 				}
 			} else {
 				if (j == 9 || j == 10 || j == 11) {
@@ -65,13 +102,13 @@ void generate_floor(Level* floor) {
 		}
 	}
 
-	floor->tiles[3][10].ramp_direction = Ramp_Orientation::EAST;
-	floor->tiles[3][10].height += 1;
-	floor->tiles[4][10].ramp_direction = Ramp_Orientation::EAST;
+	level->top_tiles[3][10].ramp_direction = Ramp_Orientation::EAST;
+	level->top_tiles[3][10].height += 1;
+	level->top_tiles[4][10].ramp_direction = Ramp_Orientation::EAST;
 
-	floor->tiles[19][10].ramp_direction = Ramp_Orientation::WEST;
-	floor->tiles[19][10].height += 1;
-	floor->tiles[18][10].ramp_direction = Ramp_Orientation::WEST;
+	level->top_tiles[19][10].ramp_direction = Ramp_Orientation::WEST;
+	level->top_tiles[19][10].height += 1;
+	level->top_tiles[18][10].ramp_direction = Ramp_Orientation::WEST;
 
 
 }
@@ -104,6 +141,7 @@ Model_Info_For_Shading stone_model_info = { 0 };
 
 Model_Info_For_Shading stone_tile_model_info = { 0 };
 Model_Info_For_Shading lava_tile_model_info = { 0 };
+Model_Info_For_Shading water_tile_model_info = { 0 };
 Model_Info_For_Shading stone_tile_ramp_model_info = { 0 };
 
 Model_Info_For_Shading base_tile_model_info = { 0 };
@@ -135,13 +173,13 @@ void init_models_for_drawing() {
 	lava_tile_model_info.texture_color = &g_texture_catalog.names.lava_tile_color;
 	shader_init_model(&shader_brdf, &lava_tile_model_info);
 
+	water_tile_model_info.model.mesh = load_mesh_bada_file("../resources/3d_models/water_tile.bada");
+	water_tile_model_info.texture_color = &g_texture_catalog.names.water_tile_color;
+	shader_init_model(&shader_water, &water_tile_model_info);
+
 	stone_tile_ramp_model_info.model.mesh = load_mesh_bada_file("../resources/3d_models/stone_tile_ramp.bada");
 	stone_tile_ramp_model_info.texture_color = &g_texture_catalog.names.stone_tile_color;
 	shader_init_model(&shader_brdf, &stone_tile_ramp_model_info);
-	
-	//player_model_info.model.mesh = load_mesh_bada_file("../resources/3d_models/earth_bender.bada");
-	//player_model_info.texture_color_path = (char*)"../resources/3d_models/earth_bender_color.jpg";
-	//shader_init_model(&shader_brdf, &player_model_info);
 
 	player_model_info.model = load_anim_bada_file("../resources/3d_models/earth_bender_anim.bada");
 	player_model_info.texture_color = &g_texture_catalog.names.earth_bender_color;
@@ -177,77 +215,103 @@ void draw_stone(Bender *p) {
 	shader_draw_call(&stone_model_info);
 }
 
-void draw_floor(Level* floor) {
+void draw_tile(Tile_Type type, Ramp_Orientation ramp_direction, float elevation, int16_t x, int16_t y) {
 
-	Mat4 model_rotation_0 = matrix_from_basis_vectors({ 1,0,0 }, { 0,1,0 }, { 0,0,1 });
-	Mat4 model_rotation_90 = matrix_from_basis_vectors({ 0,1,0 }, { -1,0,0 }, { 0,0,1 });
-	Mat4 model_rotation_180 = matrix_from_basis_vectors({ -1,0,0 }, { 0,-1,0 }, { 0,0,1 });
-	Mat4 model_rotation_270 = matrix_from_basis_vectors({ 0,-1,0 }, { 1,0,0 }, { 0,0,1 });
+	if (type == Tile_Type::AIR) return;
+
+
+	auto model = &stone_tile_model_info;
+	if (type == Tile_Type::LAVA) model = &lava_tile_model_info;
+	if (type == Tile_Type::WATER) model = &water_tile_model_info;
+
+	GLuint current_shader = model->shader->gl_id;
+
+	if (type == Tile_Type::LAVA) {
+		float ambient_strength = 0.9f;
+		shader_uniform_set(current_shader, "ambient_strength", ambient_strength);
+	}
+
+	else if (type == Tile_Type::WATER) {
+		float ambient_strength = 0.5f;
+		shader_uniform_set(current_shader, "ambient_strength", ambient_strength);
+	}
+
+	Mat4 model_matrix = matrix_translation(Vec3{ 1.0f * x, 1.0f * y, elevation});
+	shader_uniform_set(current_shader, "model", model_matrix);
+
+
+	switch (ramp_direction) {
+	case Ramp_Orientation::SOUTH:
+		shader_draw_call(&stone_tile_ramp_model_info);
+		break;
+	case Ramp_Orientation::EAST:
+		shader_uniform_set(current_shader, "model", model_matrix * model_rotation_90());
+		shader_draw_call(&stone_tile_ramp_model_info);
+		break;
+	case Ramp_Orientation::NORTH:
+		shader_uniform_set(current_shader, "model", model_matrix * model_rotation_180());
+		shader_draw_call(&stone_tile_ramp_model_info);
+		break;
+	case Ramp_Orientation::WEST:
+		shader_uniform_set(current_shader, "model", model_matrix * model_rotation_270());
+		shader_draw_call(&stone_tile_ramp_model_info);
+		break;
+	default:
+		shader_draw_call(model);
+		break;
+	}
+
+	// reset the ambient_strength
+	float ambient_strength = 0.05f;
+	shader_uniform_set(current_shader, "ambient_strength", ambient_strength);
+
+}
+
+// note model needs to always be set manually
+void update_gpu_for_shading(Bender *bender) {
+
+	// View
+	Vec3 camera_pos = Vec3{ bender->pos.x, bender->pos.y, 0.0f } + Vec3{ -3.5f, -3.5f, 7.5f };
+	Mat4 view = matrix_camera(camera_pos, { 1.5f, 1.5f, -2.0f }, { 0.0f, 0.0f, 1.0f });
+	float det = matrix_det(view);
+	shader_uniform_set(shader_brdf.gl_id, "view", view);
+	shader_uniform_set(shader_phong.gl_id, "view", view);
+	shader_uniform_set(shader_water.gl_id, "view", view);
+
+	// Projection
+	float near_plane = 0.01f;
+	float far_plane = 100.0f;
+	Mat4 projection = matrix_perspective(bender->fov, 1.4f, near_plane, far_plane);
+	shader_uniform_set(shader_brdf.gl_id, "projection", projection);
+	shader_uniform_set(shader_phong.gl_id, "projection", projection);
+	shader_uniform_set(shader_water.gl_id, "projection", projection);
+
+
+	// globals
+	shader_uniform_set(shader_water.gl_id, "time", get_time());
+
+}
+
+void draw_floor(Level* floor) {
 
 	Mat4 translation = matrix_translation(Vec3{ 2.0f, 1.0f, 5.0f });
 
 	for (int i = 0; i < FLOOR_W; i++) {
 		for (int j = 0; j < FLOOR_D; j++) {
-
-			Tile tile = floor->tiles[i][j];
-
-			if (tile.type == Tile_Type::AIR) continue;
-
+			Top_Tile tile = floor->top_tiles[i][j];
 			float elevation = 0.5f * tile.height;
-
-			//Vec4 color =color_from_tile_type(tile.type);
-			//shader_uniform_set(shader_phong.gl_id, "object_color", Vec3{ color.x, color.y, color.z });
-
-			auto flat_tile_model = &stone_tile_model_info;
-
-			translation = matrix_translation(Vec3{ 1.0f * i, 1.0f * j, elevation});
-			Mat4 model = translation;
-			shader_uniform_set(shader_phong.gl_id, "model", model);
-			shader_uniform_set(shader_brdf.gl_id, "model", model);
-
-			if (tile.type == Tile_Type::LAVA) {
-				float ambient_strength = 0.9f;
-				shader_uniform_set(shader_phong.gl_id, "ambient_strength", ambient_strength);
-				shader_uniform_set(shader_brdf.gl_id, "ambient_strength", ambient_strength);
-
-				flat_tile_model = &lava_tile_model_info;
-			}
-
-			switch (tile.ramp_direction) {
-			case Ramp_Orientation::SOUTH:
-				shader_draw_call(&stone_tile_ramp_model_info);
-				break;
-			case Ramp_Orientation::EAST:
-				shader_uniform_set(shader_brdf.gl_id, "model", model * model_rotation_90);
-				shader_draw_call(&stone_tile_ramp_model_info);
-				//shader_draw_call(&east_ramp_model_info);
-				break;
-			case Ramp_Orientation::NORTH:
-				shader_uniform_set(shader_brdf.gl_id, "model", model * model_rotation_180);
-				shader_draw_call(&stone_tile_ramp_model_info);
-				//shader_draw_call(&south_ramp_model_info);
-				break;
-			case Ramp_Orientation::WEST:
-				shader_uniform_set(shader_brdf.gl_id, "model", model * model_rotation_270);
-				shader_draw_call(&stone_tile_ramp_model_info);
-				//shader_draw_call(&west_ramp_model_info);
-				break;
-			default:
-				shader_draw_call(flat_tile_model);
-				break;
-			}
-
-			if (tile.type == Tile_Type::LAVA) {
-				float ambient_strength = 0.05f;
-				shader_uniform_set(shader_phong.gl_id, "ambient_strength", ambient_strength);
-				shader_uniform_set(shader_brdf.gl_id, "ambient_strength", ambient_strength);
-			}
-
+			draw_tile(tile.type, tile.ramp_direction, elevation, i, j);
 		}
+	}
+
+	for (int i = 0; i < floor->n_lower_tiles; i++) {
+		Lower_Tile tile = floor->lower_tiles[i];
+		float elevation = 0.5f * tile.height;
+		draw_tile(tile.type, Ramp_Orientation::FLAT, elevation, tile.x, tile.y);
 	}
 }
 
-void set_player_model_view_projection(Bender* p) {
+void draw_player(Bender* p) {
 
 	// Model
 	Mat4 model = matrix_translation(Vec3{ p->pos.x, p->pos.y, p->pos.z }) *
@@ -255,27 +319,9 @@ void set_player_model_view_projection(Bender* p) {
 		matrix_scale(0.8f);
 	shader_uniform_set(shader_brdf.gl_id, "model", model);
 
-	// View
-	Vec3 camera_pos = Vec3{ p->pos.x, p->pos.y, 0.0f } + Vec3{ -3.5f, -3.5f, 7.5f };
-	Mat4 view = matrix_camera(camera_pos, {1.5f, 1.5f, -2.0f}, {0.0f, 0.0f, 1.0f});
-	float det = matrix_det(view);
-	shader_uniform_set(shader_brdf.gl_id, "view", view);
-	shader_uniform_set(shader_phong.gl_id, "view", view);
-
-	// Projection
-	float near_plane = 0.01f;
-	float far_plane = 100.0f;
-	Mat4 projection = matrix_perspective(p->fov, 1.4f, near_plane, far_plane);
-	shader_uniform_set(shader_brdf.gl_id, "projection", projection);
-	shader_uniform_set(shader_phong.gl_id, "projection", projection);
-}
-
-
-void draw_player(Bender* p) {
 
 	shader_uniform_set(shader_brdf.gl_id, "ambient_strength", 0.15f);
 
-	set_player_model_view_projection(p);
 
 	const float animation_frame_time = 0.025f;
 	int frame_index = (int32_t)(get_time() / animation_frame_time) % player_model_info.model.count;
@@ -288,6 +334,17 @@ void draw_player(Bender* p) {
 
 	shader_uniform_set(shader_brdf.gl_id, "ambient_strength", 0.05f);
 }
+
+void draw_game(Bender* bender, Level* level) {
+
+	update_gpu_for_shading(bender);
+
+	draw_player(bender);
+	draw_floor(level);
+	draw_stone(bender);
+}
+
+
 
 void update_player(Bender* b, Level* floor) {
 
@@ -323,15 +380,15 @@ void update_player(Bender* b, Level* floor) {
 		int desired_i = (int)floorf(desired_pos.x + 0.5f);
 		int desired_j = (int)floorf(desired_pos.y + 0.5f);
 
-		Tile* desired_tile = NULL;
-		Tile* current_tile = NULL;
+		Top_Tile* desired_tile = NULL;
+		Top_Tile* current_tile = NULL;
 		{
 			if ((desired_i >= 0 && desired_i < FLOOR_W) && (desired_j >= 0 && desired_j < FLOOR_D)) {
-				desired_tile = &floor->tiles[desired_i][desired_j];
+				desired_tile = &floor->top_tiles[desired_i][desired_j];
 			}
 
 			if ((current_i >= 0 && current_i < FLOOR_W) && (current_j >= 0 && current_j < FLOOR_D)) {
-				current_tile = &floor->tiles[current_i][current_j];
+				current_tile = &floor->top_tiles[current_i][current_j];
 			}
 		}
 
@@ -412,7 +469,7 @@ void draw_minimap(Level* floor, Bender* p) {
 
 			//immediate_quad(pos, size, color_from_tile_type(floor->tiles[i][j].type));
 
-			Vec4 c1 = color_from_tile_type(floor->tiles[i][j].type);
+			Vec4 c1 = color_from_tile_type(floor->top_tiles[i][j].type);
 			Vec4 c2 = c1;
 			c2.x -= 0.4f;
 			c2.y -= 0.4f;

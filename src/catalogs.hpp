@@ -24,6 +24,7 @@ union Texture_Catalog {
 		Texture stone_block_color;
 		Texture stone_tile_color;
 		Texture lava_tile_color;
+		Texture water_tile_color;
 	} names;
 
 	Texture as_array[sizeof(names)/sizeof(Texture)];

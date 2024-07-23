@@ -162,6 +162,7 @@
   <ItemGroup>
     <None Include="shaders\material_brdf.glsl" />
     <None Include="shaders\material_phong.glsl" />
+    <None Include="shaders\material_water.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

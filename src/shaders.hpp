@@ -43,6 +43,7 @@ typedef struct Material_Shader {
 
 extern Material_Shader shader_phong;
 extern Material_Shader shader_brdf;
+extern Material_Shader shader_water;
 
 
 // gets added to the source when you call compile_shader

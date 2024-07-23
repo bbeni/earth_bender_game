@@ -451,3 +451,21 @@ Mat4 matrix_perspective_orthographic(float left, float right, float top, float b
 
 	return m;
 }
+
+
+// convenience wrappers
+Mat4 model_rotation_0() {
+	return matrix_from_basis_vectors({ 1,0,0 }, { 0,1,0 }, { 0,0,1 });
+}
+
+Mat4 model_rotation_90() {
+	return matrix_from_basis_vectors({ 0,1,0 }, { -1,0,0 }, { 0,0,1 });
+}
+
+Mat4 model_rotation_180() {
+	return matrix_from_basis_vectors({ -1,0,0 }, { 0,-1,0 }, { 0,0,1 });
+}
+
+Mat4 model_rotation_270() {
+	return matrix_from_basis_vectors({ 0,-1,0 }, { 1,0,0 }, { 0,0,1 });
+}
