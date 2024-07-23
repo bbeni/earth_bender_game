@@ -31,6 +31,7 @@ int main() {
 	Bender player = { 0 };
 	player.pos = Vec3{1.0f, 1.0f, 0.5f };
 	player.direction_angle = 0.0f;
+	player.aspect = (float)width/(float)height;
 
 	player.turn_speed = 6.0f;
 	player.walk_speed = 4.0f;
@@ -94,6 +95,7 @@ int main() {
 					width = new_size.x;
 					height = new_size.y;
 					adjust_viewport_size(width, height);
+					float aspect = (float)width / (float)height;
 				}
 
 				if (event.key_code == Key_Code::O) {

@@ -56,6 +56,7 @@ struct Bender {
 	float walk_speed;
 	float turn_speed;
 	float fov; // @Temporary
+	float aspect; // @Temporary
 
 	bool use_orthographic; // @Temporary
 };

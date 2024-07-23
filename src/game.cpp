@@ -281,7 +281,7 @@ void update_gpu_for_shading(Bender *bender) {
 	// Projection
 	float near_plane = 0.01f;
 	float far_plane = 100.0f;
-	float aspect = 1.4f;
+	float aspect = bender->aspect;
 	Mat4 projection = matrix_perspective(bender->fov, aspect, near_plane, far_plane);
 	
 	if (bender->use_orthographic) {
