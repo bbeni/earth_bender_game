@@ -95,6 +95,10 @@ int main() {
 					height = new_size.y;
 					adjust_viewport_size(width, height);
 				}
+
+				if (event.key_code == Key_Code::O) {
+					player.use_orthographic = !player.use_orthographic;
+				}
 			}
 		}
 

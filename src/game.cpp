@@ -281,7 +281,13 @@ void update_gpu_for_shading(Bender *bender) {
 	// Projection
 	float near_plane = 0.01f;
 	float far_plane = 100.0f;
-	Mat4 projection = matrix_perspective(bender->fov, 1.4f, near_plane, far_plane);
+	float aspect = 1.4f;
+	Mat4 projection = matrix_perspective(bender->fov, aspect, near_plane, far_plane);
+	
+	if (bender->use_orthographic) {
+		projection = matrix_perspective_orthographic(-5.0f * aspect, +5.0f * aspect, 5.0f, -5.0f, near_plane, far_plane);
+	}
+
 	shader_uniform_set(shader_brdf.gl_id, "projection", projection);
 	shader_uniform_set(shader_phong.gl_id, "projection", projection);
 	shader_uniform_set(shader_water.gl_id, "projection", projection);

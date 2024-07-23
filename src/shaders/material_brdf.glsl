@@ -145,7 +145,7 @@ void main() {
 	vec3 l = normalize(-light_direction);
     
     float roughness = 0.0;
-    vec3 f0 = Silver;
+    vec3 f0 = Gold;
 
     float diff = max(dot(n, l), 0.0);
 	vec3 diffuse = diff * light_color;
