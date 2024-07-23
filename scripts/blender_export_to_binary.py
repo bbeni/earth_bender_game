@@ -271,4 +271,4 @@ if __name__ == "__main__":
     register()
 
     # test call
-    bpy.ops.export_test.some_data('INVOKE_DEFAULT')
+    # bpy.ops.export_test.some_data('INVOKE_DEFAULT')

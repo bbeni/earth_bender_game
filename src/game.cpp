@@ -3,7 +3,7 @@
 #include "shaders.hpp"
 
 
-void generate_floor(Floor* floor) {
+void generate_floor(Level* floor) {
 	for (int i = 0; i < FLOOR_W; i++) {
 		for (int j = 0; j < FLOOR_D; j++) {
 
@@ -32,7 +32,7 @@ void generate_floor(Floor* floor) {
 
 			if ((i >= 1) && (i <= 6) && (j == 25)) {
 				t->type = Tile_Type::EARTH;
-				t->ramp_direction = Orientation::EAST;
+				t->ramp_direction = Ramp_Orientation::EAST;
 				t->height = i;
 				continue;
 			}
@@ -53,11 +53,11 @@ void generate_floor(Floor* floor) {
 				} else if (j == 12) {
 					t->type = Tile_Type::STONE;
 					t->height = 1;
-					t->ramp_direction = Orientation::SOUTH;
+					t->ramp_direction = Ramp_Orientation::SOUTH;
 				} else if (j == 8) {
 					t->type = Tile_Type::STONE;
 					t->height = 1;
-					t->ramp_direction = Orientation::NORTH;
+					t->ramp_direction = Ramp_Orientation::NORTH;
 				} else {
 					t->type = Tile_Type::GRASS;
 				}
@@ -65,13 +65,13 @@ void generate_floor(Floor* floor) {
 		}
 	}
 
-	floor->tiles[3][10].ramp_direction = Orientation::EAST;
+	floor->tiles[3][10].ramp_direction = Ramp_Orientation::EAST;
 	floor->tiles[3][10].height += 1;
-	floor->tiles[4][10].ramp_direction = Orientation::EAST;
+	floor->tiles[4][10].ramp_direction = Ramp_Orientation::EAST;
 
-	floor->tiles[19][10].ramp_direction = Orientation::WEST;
+	floor->tiles[19][10].ramp_direction = Ramp_Orientation::WEST;
 	floor->tiles[19][10].height += 1;
-	floor->tiles[18][10].ramp_direction = Orientation::WEST;
+	floor->tiles[18][10].ramp_direction = Ramp_Orientation::WEST;
 
 
 }
@@ -130,25 +130,25 @@ void init_models_for_drawing() {
 	construct_normals(&base_tile_model_info.model);
 	shader_init_model(&shader_phong, &base_tile_model_info);
 
-	construct_ramp_triangles(&north_ramp_model_info.model, Orientation::NORTH);
+	construct_ramp_triangles(&north_ramp_model_info.model, Ramp_Orientation::NORTH);
 	construct_normals(&north_ramp_model_info.model);
 	shader_init_model(&shader_phong, &north_ramp_model_info);
 
-	construct_ramp_triangles(&south_ramp_model_info.model, Orientation::SOUTH);
+	construct_ramp_triangles(&south_ramp_model_info.model, Ramp_Orientation::SOUTH);
 	construct_normals(&south_ramp_model_info.model);
 	shader_init_model(&shader_phong, &south_ramp_model_info);
 
-	construct_ramp_triangles(&east_ramp_model_info.model, Orientation::EAST);
+	construct_ramp_triangles(&east_ramp_model_info.model, Ramp_Orientation::EAST);
 	construct_normals(&east_ramp_model_info.model);
 	shader_init_model(&shader_phong, &east_ramp_model_info);
 
-	construct_ramp_triangles(&west_ramp_model_info.model, Orientation::WEST);
+	construct_ramp_triangles(&west_ramp_model_info.model, Ramp_Orientation::WEST);
 	construct_normals(&west_ramp_model_info.model);
 	shader_init_model(&shader_phong, &west_ramp_model_info);
 
 }
 
-void draw_stone(Player *p) {
+void draw_stone(Bender *p) {
 	Mat4 model_rotation = matrix_from_basis_vectors({ 1,0,0 }, { 0,1,0 }, { 0,0,1 });
 	Mat4 translation = matrix_translation(Vec3{ 4, 4, 1.0f });
 
@@ -156,7 +156,7 @@ void draw_stone(Player *p) {
 	shader_draw_call(&stone_model_info);
 }
 
-void draw_floor(Floor* floor) {
+void draw_floor(Level* floor) {
 
 	Mat4 model_rotation = matrix_from_basis_vectors({ 1,0,0 }, { 0,1,0 }, { 0,0,1 });
 	Mat4 translation = matrix_translation(Vec3{ 2.0f, 1.0f, 5.0f });
@@ -168,7 +168,7 @@ void draw_floor(Floor* floor) {
 
 			if (tile.type == Tile_Type::AIR) continue;
 
-			float elevation = 0.5f * (tile.height - (int)(tile.ramp_direction != Orientation::NO_ORIENTATION) );
+			float elevation = 0.5f * (tile.height - (int)(tile.ramp_direction != Ramp_Orientation::FLAT) );
 
 			Vec4 color =color_from_tile_type(tile.type);
 			shader_uniform_set(shader_phong.gl_id, "object_color", Vec3{ color.x, color.y, color.z });
@@ -183,13 +183,13 @@ void draw_floor(Floor* floor) {
 			}
 
 			switch (tile.ramp_direction) {
-			case Orientation::NORTH:
+			case Ramp_Orientation::NORTH:
 				shader_draw_call(&north_ramp_model_info); break;
-			case Orientation::EAST:
+			case Ramp_Orientation::EAST:
 				shader_draw_call(&east_ramp_model_info); break;
-			case Orientation::SOUTH:
+			case Ramp_Orientation::SOUTH:
 				shader_draw_call(&south_ramp_model_info); break;
-			case Orientation::WEST:
+			case Ramp_Orientation::WEST:
 				shader_draw_call(&west_ramp_model_info); break;
 			default:
 				shader_draw_call(&base_tile_model_info);
@@ -204,7 +204,7 @@ void draw_floor(Floor* floor) {
 	}
 }
 
-void set_player_model_view_projection(Player* p) {
+void set_player_model_view_projection(Bender* p) {
 
 	// Model
 	Mat4 model = matrix_translation(Vec3{ p->pos.x, p->pos.y, p->pos.z }) *
@@ -228,7 +228,7 @@ void set_player_model_view_projection(Player* p) {
 }
 
 
-void draw_player(Player* p) {
+void draw_player(Bender* p) {
 
 	shader_uniform_set(shader_brdf.gl_id, "ambient_strength", 0.15f);
 
@@ -246,36 +246,36 @@ void draw_player(Player* p) {
 	shader_uniform_set(shader_brdf.gl_id, "ambient_strength", 0.05f);
 }
 
-void update_player(Player* p, Floor* floor) {
+void update_player(Bender* b, Level* floor) {
 
 	float frame_time = (float)get_frame_time();
 
-	float angle = p->direction_angle;
-	float target_angle = p->target_direction_angle - 0.001f;
+	float angle = b->direction_angle;
+	float target_angle = b->target_direction_angle - 0.001f;
 
 
 	if (fabs(angle - target_angle) > 0.00001f) {
-		p->current_action = Action::TURNING;
-		move_towards_on_circle(&p->direction_angle, target_angle, p->turn_speed, frame_time);
+		b->current_action = Action::TURNING;
+		move_towards_on_circle(&b->direction_angle, target_angle, b->turn_speed, frame_time);
 	}
 
 	Vec3 direction = Vec3{ sinf(angle), cosf(angle) };
 
 
-	if (p->current_action == Action::WALKING) {
+	if (b->current_action == Action::WALKING) {
 		//move_towards(&p->fov, 72.0f, 90.0f, frame_time);
 	} else {
-		move_towards(&p->fov, 60.0f, 70.0f, frame_time);
+		move_towards(&b->fov, 60.0f, 70.0f, frame_time);
 	}
 
-	p->velocity = direction * p->walk_speed;
+	b->velocity = direction * b->walk_speed;
 
 
-	if (p->current_action == Action::WALKING) {
-		Vec3 desired_pos = p->pos + p->velocity * frame_time;
+	if (b->current_action == Action::WALKING) {
+		Vec3 desired_pos = b->pos + b->velocity * frame_time;
 
-		int current_i = (int)floorf(p->pos.x + 0.5f);
-		int current_j = (int)floorf(p->pos.y + 0.5f);
+		int current_i = (int)floorf(b->pos.x + 0.5f);
+		int current_j = (int)floorf(b->pos.y + 0.5f);
 
 		int desired_i = (int)floorf(desired_pos.x + 0.5f);
 		int desired_j = (int)floorf(desired_pos.y + 0.5f);
@@ -298,11 +298,11 @@ void update_player(Player* p, Floor* floor) {
 			int d_j = desired_j - current_j;
 
 			if (d_i != 0) {
-				desired_pos.x = p->pos.x;
+				desired_pos.x = b->pos.x;
 			}
 
 			if (d_j != 0) {
-				desired_pos.y = p->pos.y;
+				desired_pos.y = b->pos.y;
 			}
 
 			desired_pos.z = current_tile->height * 0.5f + 0.5f;
@@ -312,23 +312,23 @@ void update_player(Player* p, Floor* floor) {
 
 			desired_pos.z = desired_tile->height * 0.5f + 0.5f;
 
-			if (desired_tile->ramp_direction != Orientation::NO_ORIENTATION) {
+			if (desired_tile->ramp_direction != Ramp_Orientation::FLAT) {
 
 				float x = desired_pos.x - floorf(desired_pos.x + 0.5f) + 0.5f;
 				float y = desired_pos.y - floorf(desired_pos.y + 0.5f) + 0.5f;
 
 				switch (desired_tile->ramp_direction)
 				{
-				case Orientation::EAST:
+				case Ramp_Orientation::EAST:
 					desired_pos.z += lerp(-0.5f, 0.0f, x);
 					break;
-				case Orientation::WEST:
+				case Ramp_Orientation::WEST:
 					desired_pos.z += lerp(0.0f, -0.5f, x);
 					break;
-				case Orientation::NORTH:
+				case Ramp_Orientation::NORTH:
 					desired_pos.z += lerp(-0.5f, 0.0f, y);
 					break;
-				case Orientation::SOUTH:
+				case Ramp_Orientation::SOUTH:
 					desired_pos.z += lerp(0.0f, -0.5f, y);
 					break;
 				default:
@@ -337,13 +337,13 @@ void update_player(Player* p, Floor* floor) {
 			}
 		}
 
-		p->pos = desired_pos;
+		b->pos = desired_pos;
 	}
 }
 
 
 
-void draw_minimap(Floor* floor, Player* p) {
+void draw_minimap(Level* floor, Bender* p) {
 
 	float offset = -1.0f; // rendering left bottom corner is (-1, -1)
 

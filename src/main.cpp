@@ -20,7 +20,7 @@ int main() {
 
 	float shake_timer = 0.0f;
 
-	Floor floor = {0};
+	Level floor = {0};
 	generate_floor(&floor);
 
 	Vec4 color = { 1.0, 0.5, 0.0, 1.0 };
@@ -28,7 +28,7 @@ int main() {
 	init_models_for_drawing();
 	draw_floor(&floor);
 
-	Player player = { 0 };
+	Bender player = { 0 };
 	player.pos = Vec3{1.0f, 1.0f, 0.5f };
 	player.direction_angle = 0.0f;
 

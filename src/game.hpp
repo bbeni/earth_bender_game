@@ -13,18 +13,17 @@ enum class Tile_Type {
 	WATER,
 };
 
-
 struct Tile {
 	int height;
 	Tile_Type type;
 	bool block_walking;
-	Orientation ramp_direction;
+	Ramp_Orientation ramp_direction;
 };
 
 #define FLOOR_W 40
 #define FLOOR_D 40
 
-struct Floor {
+struct Level {
 	Tile tiles[FLOOR_D][FLOOR_W];
 };
 
@@ -34,7 +33,7 @@ enum class Action {
 	WALKING,
 };
 
-struct Player {
+struct Bender {
 	Vec3  pos;
 	float direction_angle;
 	Vec3  velocity;
@@ -49,14 +48,14 @@ struct Player {
 
 };
 
-void generate_floor(Floor* floor);
+void generate_floor(Level* floor);
 
-void update_player(Player* p, Floor* floor);
+void update_player(Bender* p, Level* floor);
 
-void draw_minimap(Floor* floor, Player* p);
-void draw_floor(Floor* floor);
-void draw_player(Player* p);
-void draw_stone(Player* p);
+void draw_minimap(Level* floor, Bender* p);
+void draw_floor(Level* floor);
+void draw_player(Bender* p);
+void draw_stone(Bender* p);
 
 
 // temporary for testing rendering the cube

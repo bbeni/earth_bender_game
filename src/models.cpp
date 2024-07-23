@@ -76,7 +76,7 @@ void construct_tile_triangles(Model* model) {
 }
 
 
-void construct_ramp_triangles(Model* model, Orientation ramp_orientation) {
+void construct_ramp_triangles(Model* model, Ramp_Orientation ramp_orientation) {
 
 	construct_cube_triangles(model);
 	Vertex_Info_Array* m = &model->mesh;
@@ -86,25 +86,25 @@ void construct_ramp_triangles(Model* model, Orientation ramp_orientation) {
 			m->data[i].position.z *= 3.0f;
 		}
 
-		if (ramp_orientation == Orientation::NORTH)
+		if (ramp_orientation == Ramp_Orientation::NORTH)
 		{
 			if (m->data[i].position.z > 0.0f && m->data[i].position.y > 0.0f) {
 				m->data[i].position.z *= 2.0f;
 			}
 		}
-		if (ramp_orientation == Orientation::SOUTH)
+		if (ramp_orientation == Ramp_Orientation::SOUTH)
 		{
 			if (m->data[i].position.z > 0.0f && m->data[i].position.y < 0.0f) {
 				m->data[i].position.z *= 2.0f;
 			}
 		}
-		if (ramp_orientation == Orientation::EAST)
+		if (ramp_orientation == Ramp_Orientation::EAST)
 		{
 			if (m->data[i].position.z > 0.0f && m->data[i].position.x > 0.0f) {
 				m->data[i].position.z *= 2.0f;
 			}
 		}
-		if (ramp_orientation == Orientation::WEST)
+		if (ramp_orientation == Ramp_Orientation::WEST)
 		{
 			if (m->data[i].position.z > 0.0f && m->data[i].position.x < 0.0f) {
 				m->data[i].position.z *= 2.0f;
@@ -140,11 +140,10 @@ void construct_normals(Model* model) {
 }
 
 static const uint32_t BADA_FILE_MAGIC = 0xdabadaba;
-
+static const uint32_t BADA_VERSION = 2;
 
 // read a .bada file generated with the blender script. will abort on error
 Animated_Model load_anim_bada_file(const char* file_path) {
-	const uint32_t BADA_VERSION = 2;
 
 	// TODO: use read file directly
 	char* data;
@@ -197,6 +196,7 @@ Animated_Model load_anim_bada_file(const char* file_path) {
 	for (int i = 0; i < frames_count; i++) {
 		model.meshes[i].count = 3 * faces_count;
 		model.meshes[i].data = (Vertex_Info*)malloc(sizeof(Vertex_Info) * model.meshes[i].count);
+		assert(model.meshes[i].data != NULL);
 	}
 
 	// we only have float data from now on
@@ -243,85 +243,10 @@ Animated_Model load_anim_bada_file(const char* file_path) {
 }
 
 
-static const uint32_t BADA_VERSION = 1;
-
 // read a .bada file generated with the blender script. will abort on error
 Vertex_Info_Array load_mesh_bada_file(const char* file_path) {
 
-	// TODO: use read file directly
-	char* data;
-	int size;
-	if (!load_resource(file_path, &size, &data)) {
-		assert(false && "failed to load bada file");
-	}
-
-	printf("Info: %s has %d bytes of content\n", file_path, size);
-
-	// check filemagic
-	printf("Info: supposed filemagic reversed is: 0x%4X\n", *(uint32_t*)data);
-	uint32_t supposed_filemagic = *(uint32_t*)data;
-	data += 4;
-	assert(supposed_filemagic == BADA_FILE_MAGIC);
-
-	// check version number
-	int32_t supposed_version = *(int32_t*)data;
-	data += 4;
-	if (supposed_version > BADA_VERSION) {
-		printf("Error: Loading .bada file '%s': the version is too high so we don't know how to load it. Epected %d got %d (a currupted file is also likely..)\n", file_path, BADA_VERSION, supposed_version);
-		assert(false);
-	}
-
-	if (supposed_version < BADA_VERSION) {
-		printf("Error: Loading .bada file '%s': the version is too low and we don't support migrations for now. Epected %d got %d\n", file_path, BADA_VERSION, supposed_version);
-		assert(false);
-	}
-
-	// extract faces count
-	uint32_t faces_count = *(uint32_t*)data;
-	data += 4;
-	printf("Info: we have %d faces in bada version %d file\n", faces_count, supposed_version);
-
-	assert(*(uint32_t*)data == 1); // for now we support only triangles
-	data += 4;
-
-	// now we start with the trinangles
-	Vertex_Info_Array mesh = { 0 };
-	//mesh.triangle_count = faces_count;
-	mesh.count = 3 * faces_count;
-	mesh.data = (Vertex_Info*)malloc(sizeof(Vertex_Info) * mesh.count);
-
-	// we only have float data for and from now
-	float* f_data = (float*)data;
-	for (int i = 0; i < faces_count; i++) {
-
-		// skip material index for now
-		f_data++;
-
-		int base_index = i * 3;
-		
-		mesh.data[base_index].normal.x = *(f_data++);
-		mesh.data[base_index].normal.y = *(f_data++);
-		mesh.data[base_index].normal.z = *(f_data++);
-
-		// copy the normal to other 2 vertex_info to mesh
-		for (int j = 1; j < 3; j++) {
-			mesh.data[base_index + j].normal = mesh.data[base_index].normal;
-		}
-
-		for (int j = 0; j < 3; j++) {
-			mesh.data[base_index+j].position.x = *(f_data++);
-			mesh.data[base_index+j].position.y = *(f_data++);
-			mesh.data[base_index+j].position.z = *(f_data++);
-		}
-
-		for (int j = 0; j < 3; j++) {
-			mesh.data[base_index + j].uv.x = *(f_data++);
-			mesh.data[base_index + j].uv.y = *(f_data++);
-			//printf("uv: (%f, %f)\n", mesh.data[base_index + j].uv.x, mesh.data[base_index + j].uv.y);
-		}
-	}
-	
-	uint32_t magic = *(uint32_t*)f_data;
-	assert(*(uint32_t*)f_data == 0xdabadaba);
-	return mesh;
+	// load the animated model and extract first frame
+	Animated_Model animated_model = load_anim_bada_file(file_path);
+	return animated_model.meshes[0];
 }

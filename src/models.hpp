@@ -26,17 +26,19 @@ struct Animated_Model {
 	Vertex_Info_Array meshes[MAX_FRAMES_PER_ANIMATION];
 };
 
-enum Orientation {
-	NO_ORIENTATION = 0,
+
+enum Ramp_Orientation {
+	FLAT = 0,
 	NORTH,
 	EAST,
 	SOUTH,
 	WEST,
 };
 
+
 void construct_cube_triangles(Model* model);
 void construct_tile_triangles(Model* model);
-void construct_ramp_triangles(Model* model, Orientation ramp_orientation);
+void construct_ramp_triangles(Model* model, Ramp_Orientation ramp_orientation);
 
 void construct_normals(Model* model);
 
