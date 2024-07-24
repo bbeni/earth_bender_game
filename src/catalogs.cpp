@@ -25,6 +25,7 @@ bool check_all_initialized() {
 }
 
 bool init_texture_catalog_disk_and_gpu() {
+	g_texture_catalog.names.default_color = set("../resources/textures/default_color.jpg");
 	g_texture_catalog.names.earth_bender_color = set("../resources/textures/earth_bender_color.jpg");
 	g_texture_catalog.names.stone_block_color = set("../resources/textures/stone_block_color.jpg");
 	g_texture_catalog.names.stone_tile_color = set("../resources/textures/stone_tile_color.jpg");

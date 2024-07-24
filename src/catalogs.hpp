@@ -20,6 +20,7 @@ struct Texture {
 // @Bug might be undefined bahviour, compiler dependent
 union Texture_Catalog {
 	struct {
+		Texture default_color;
 		Texture earth_bender_color;
 		Texture stone_block_color;
 		Texture stone_tile_color;

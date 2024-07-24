@@ -139,6 +139,63 @@ void construct_normals(Model* model) {
 
 }
 
+void make_cube_model(Model* model) {
+	float s = 0.5f;
+	Vertex_Info_Array* m = &model->mesh;
+
+	for (int i = -1; i < 2; i += 2) {
+
+		Vertex_Info v1 = { -s * i, -s * i, -s * i, 0, 0, 0, 0, 0 };
+		Vertex_Info v2 = { s, -s, -s * i , 0, 0, 0, 0, 1 };
+		Vertex_Info v3 = { s * i, s * i, -s * i , 0, 0, 0, 1, 1 };
+		Vertex_Info v4 = { -s, s, -s * i , 0, 0, 0, 1, 0 };
+
+		// seems legit
+		d_append(m, v1);
+		d_append(m, v2);
+		d_append(m, v4);
+		d_append(m, v4);
+		d_append(m, v2);
+		d_append(m, v3);
+	}
+
+	for (int i = -1; i < 2; i += 2) {
+
+		// reverse corners for normals
+		Vertex_Info v1 = { -s, -s * i, -s, 0, 0, 0, 0, 0 };
+		Vertex_Info v4 = { s, -s * i, -s, 0, 0, 0, 0, 1 };
+		Vertex_Info v3 = { s, -s * i,  s, 0, 0, 0, 1, 1 };
+		Vertex_Info v2 = { -s, -s * i,  s, 0, 0, 0, 1, 0 };
+
+		d_append(m, v1);
+		d_append(m, v2);
+		d_append(m, v4);
+		d_append(m, v4);
+		d_append(m, v2);
+		d_append(m, v3);
+	}
+
+
+	for (int i = -1; i < 2; i += 2) {
+
+		Vertex_Info v1 = { s * i, -s, -s, 0, 0, 0, 0, 0 };
+		Vertex_Info v2 = { s * i,  s, -s, 0, 0, 0, 1, 0 };
+		Vertex_Info v3 = { s * i,  s,  s, 0, 0, 0, 0, 1 };
+		Vertex_Info v4 = { s * i, -s,  s, 0, 0, 0, 1, 1 };
+
+		d_append(m, v1);
+		d_append(m, v2);
+		d_append(m, v4);
+		d_append(m, v4);
+		d_append(m, v2);
+		d_append(m, v3);
+	}
+
+	construct_normals(model);
+}
+
+
+
 static const uint32_t BADA_FILE_MAGIC = 0xdabadaba;
 static const uint32_t BADA_VERSION = 2;
 

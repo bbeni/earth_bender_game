@@ -18,6 +18,8 @@ struct Vec3 {
 	Vec3 operator-(const Vec3& other) const;
 	Vec3 operator*(float f) const;
 	bool operator!=(const Vec3& other) const;
+	Vec3& operator+=(const Vec3& other);
+	Vec3& operator-=(const Vec3& other);
 };
 
 struct Vec2 {
@@ -51,6 +53,7 @@ void normalize_or_z_axis(Vec3* v);
 // -pi to pi
 float angle_between(const Vec2& a, const Vec2& b);
 void normalize_or_y_axis(Vec2* v);
+void normalize_or_zero(Vec2* v);
 float length(const Vec2& vec);
 
 
@@ -85,8 +88,8 @@ Mat4 matrix_unit();
 Mat4 matrix_look_at(Vec3 eye, Vec3 target, Vec3 up);
 Mat4 matrix_camera(Vec3 pos, Vec3 looking_direction, Vec3 up);
 
-Mat4 matrix_perspective(float vertical_fov, float aspect, float near, float far);
-Mat4 matrix_perspective_orthographic(float left, float right, float top, float bottom, float near, float far);
+Mat4 matrix_perspective_projection(float vertical_fov, float aspect, float near, float far);
+Mat4 matrix_orthographic_projection(float left, float right, float top, float bottom, float near, float far);
 
 Mat4 model_rotation_0();
 Mat4 model_rotation_90();

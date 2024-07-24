@@ -42,6 +42,10 @@ void construct_ramp_triangles(Model* model, Ramp_Orientation ramp_orientation);
 
 void construct_normals(Model* model);
 
+// make a cube with verts, normals and uvs set
+void make_cube_model(Model* model);
+
+
 // loading function for my own 3d model format
 Vertex_Info_Array load_mesh_bada_file(const char* file_path);
 

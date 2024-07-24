@@ -191,7 +191,7 @@ void init_phong_uniforms() {
 	float near_plane = 0.01f;
 	float far_plane = 1000.0f;
 
-	Mat4 projection = matrix_perspective(fov, 1.4f, near_plane, far_plane);
+	Mat4 projection = matrix_perspective_projection(fov, 1.4f, near_plane, far_plane);
 	//projection = matrix_perspective_orthographic(-3.5f, 1.5f, 7.0f, 3.0f, near_plane, far_plane);
 
 	// Model transformation
@@ -224,7 +224,7 @@ void init_common_uniforms(GLuint shader_id) {
 	float near_plane = 0.01f;
 	float far_plane = 1000.0f;
 
-	Mat4 projection = matrix_perspective(fov, 1.4f, near_plane, far_plane);
+	Mat4 projection = matrix_perspective_projection(fov, 1.4f, near_plane, far_plane);
 	//projection = matrix_perspective_orthographic(-3.5f, 1.5f, 7.0f, 3.0f, near_plane, far_plane);
 
 	// Model transformation

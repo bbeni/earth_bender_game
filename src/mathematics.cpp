@@ -101,6 +101,17 @@ void normalize_or_y_axis(Vec2* v) {
 	v->y *= factor;
 }
 
+void normalize_or_zero(Vec2* v) {
+	float denom = sqrtf(v->x * v->x + v->y * v->y);
+	if (denom == 0.0f) {
+		*v = Vec2{ 0.0f, 0.0f };
+		return;
+	}
+	float factor = 1 / denom;
+	v->x *= factor;
+	v->y *= factor;
+}
+
 
 float dot(const Vec3& a, const Vec3& b) {
 	return a.x * b.x + a.y * b.y + a.z * b.z;
@@ -163,7 +174,21 @@ bool Vec3::operator!=(const Vec3& other) const {
 	return x != other.x || y != other.y || z != other.z;
 }
 
+Vec3& Vec3::operator+=(const Vec3& other)
+{
+	x += other.x;
+	y += other.y;
+	z += other.z;
+	return *this;
+}
 
+Vec3& Vec3::operator-=(const Vec3& other)
+{
+	x -= other.x;
+	y -= other.y;
+	z -= other.z;
+	return *this;
+}
 
 Vec2 Vec2::operator+(const Vec2& other) const {
 	Vec2 v = {
@@ -416,7 +441,7 @@ Mat4 matrix_look_at(Vec3 eye, Vec3 target, Vec3 up) {
 
 // https://www.songho.ca/opengl/gl_projectionmatrix.html
 // vertical_fov in degrees
-Mat4 matrix_perspective(float vertical_fov, float aspect, float near, float far) {
+Mat4 matrix_perspective_projection(float vertical_fov, float aspect, float near, float far) {
 
 	Mat4 mat = { 0 };
 
@@ -435,8 +460,8 @@ Mat4 matrix_perspective(float vertical_fov, float aspect, float near, float far)
 	return mat;
 }
 
-// -1 to 1 
-Mat4 matrix_perspective_orthographic(float left, float right, float top, float bottom, float near, float far) {
+// -1 to 1
+Mat4 matrix_orthographic_projection(float left, float right, float top, float bottom, float near, float far) {
 	Mat4 m = {0};
 
 	m.u11 = 2.0f / (right - left);
