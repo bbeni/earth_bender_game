@@ -10,20 +10,22 @@ struct Vertex_Info {
 	Vec2 uv;
 };
 
-struct Vertex_Info_Array {
+// A mesh that consists of triangles
+struct Mesh {
 	size_t capacity;
 	size_t count;
 	Vertex_Info* data;
 };
 
-struct Model {
-	Vertex_Info_Array mesh;
+struct Static_Model {
+	Mesh mesh;
 };
+
 
 #define MAX_FRAMES_PER_ANIMATION 128
 struct Animated_Model {
 	size_t count;
-	Vertex_Info_Array meshes[MAX_FRAMES_PER_ANIMATION];
+	Mesh meshes[MAX_FRAMES_PER_ANIMATION];
 };
 
 
@@ -36,18 +38,18 @@ enum Ramp_Orientation {
 };
 
 
-void construct_cube_triangles(Model* model);
-void construct_tile_triangles(Model* model);
-void construct_ramp_triangles(Model* model, Ramp_Orientation ramp_orientation);
+void construct_cube_triangles(Static_Model* model);
+void construct_tile_triangles(Static_Model* model);
+void construct_ramp_triangles(Static_Model* model, Ramp_Orientation ramp_orientation);
 
-void construct_normals(Model* model);
+void construct_normals(Static_Model* model);
 
 // make a cube with verts, normals and uvs set
-void make_cube_model(Model* model);
+void make_cube_model(Static_Model* model);
 
 
 // loading function for my own 3d model format
-Vertex_Info_Array load_mesh_bada_file(const char* file_path);
+Mesh load_mesh_bada_file(const char* file_path);
 
 // @Temporary
 Animated_Model load_anim_bada_file(const char* file_path);

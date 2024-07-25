@@ -6,40 +6,46 @@
 #include "shaders.hpp"
 
 
-Model_Info_For_Shading cube = {0};
-
-
 struct Editor_State {
 	bool initialized;
 	Vec3 camera_pos;
+	Vec3 camera_direction;
+	Vec3 camera_up;
 	float zoom_level;
 };
 
-Editor_State editor = {0};
+Editor_State editor = { 0 };
 
 
 void draw_editor(Level *level) {
 	if (!editor.initialized) {
 		editor.initialized = true;
-		make_cube_model(&cube.model);
-		cube.texture_color = &g_texture_catalog.names.default_color;
-		shader_init_model(&shader_brdf, &cube);
+		editor.camera_pos = Vec3{ -6, -6, 15 };
+		editor.camera_direction = Vec3{ 1, 1, -1.5f };
+		editor.camera_up = Vec3 {0, 0, 1};
 	}
 
-	Mat4 model_rotation = matrix_from_basis_vectors({ 1,0,0 }, { 0,1,0 }, { 0,0,1 });
-	Mat4 translation = matrix_translation(Vec3{ 0, 0, 0.5f });
-	shader_uniform_set(shader_brdf.gl_id, "model", translation * model_rotation);
-	shader_uniform_set(shader_water.gl_id, "model", translation * model_rotation);
 
-	Vec3 looking_direction = Vec3{ 1, 1, -1.5f };
-	Vec3 pos = Vec3{ -4, -4, 20 } + editor.camera_pos + looking_direction * editor.zoom_level;
+	Vec3 pos = editor.camera_pos + editor.camera_direction * editor.zoom_level;
 
-	Mat4 view = matrix_camera(pos, looking_direction, Vec3{0, 0, 1});
+	Mat4 view = matrix_camera(pos, editor.camera_direction, editor.camera_up);
 	shader_uniform_set(shader_brdf.gl_id, "view", view);
 	shader_uniform_set(shader_water.gl_id, "view", view);
 	shader_uniform_set(shader_water.gl_id, "time", get_time());
+	shader_uniform_set(shader_brdf.gl_id, "ambient_strength", 0.5f);
 
-	shader_draw_call(&cube);
+	for (int i = 0; i < sizeof(loaded_models.as_array) / sizeof(loaded_models.as_array[0]); i++) {
+		
+		static const int items_per_row = 20;
+
+		Mat4 model_rotation = matrix_rotation_euler(0, 0, 0);
+		Mat4 translation = matrix_translation(Vec3{ -2 - (float)(i / items_per_row), (float)(i % items_per_row), 0 });
+		shader_uniform_set(shader_brdf.gl_id, "model", translation * model_rotation);
+		shader_uniform_set(shader_water.gl_id, "model", translation * model_rotation);
+		shader_draw_call(&loaded_models.as_array[i]);
+	}
+	shader_uniform_set(shader_brdf.gl_id, "ambient_strength", 0.05f);
+
 
 	draw_floor(level);
 
@@ -138,7 +144,9 @@ int main() {
 	bender.turn_speed = 6.0f;
 	bender.walk_speed = 4.0f;
 
-	Program_State program_state = Program_State::GAME;
+	bender.fov = 50.0f;
+
+	Program_State program_state = Program_State::EDITOR;
 
 	while (!quit) {
 
@@ -200,7 +208,7 @@ int main() {
 			if (program_state == Program_State::EDITOR) {
 				if (event.type == MOUSE_WHEEL_V) {
 					editor.zoom_level += event.wheel_delta * 0.004f;
-					clamp(&editor.zoom_level, -7, 12.7f); // heuristic
+					clamp(&editor.zoom_level, 0, 9.6f); // heuristic
 				}
 			}
 

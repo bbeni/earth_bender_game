@@ -56,8 +56,6 @@ void normalize_or_y_axis(Vec2* v);
 void normalize_or_zero(Vec2* v);
 float length(const Vec2& vec);
 
-
-
 struct Mat4 {
 	// column major format (looks flipped here)
 

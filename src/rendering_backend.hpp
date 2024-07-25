@@ -29,11 +29,11 @@ void immediate_quad(float x, float y, float width, float height, Vec4 color);
 void immediate_send();
 
 struct Model_Info_For_Shading {
-	Model model;              // needs be set by user
-	Texture* texture_color;   // optional set by user
+	Static_Model model;      // needs be set by user
+	Texture* texture_color;  // (optional) set by user
 
-	bool initialized;  // set by shader_init_model()
-	Material_Shader* shader;    // set by shader_init_model()
+	bool initialized;        // set by shader_init_model()
+	Material_Shader* shader; // set by shader_init_model()
 
 	GLuint shader_vao; // set by shader_init_model()
 	GLuint shader_vbo; // set by shader_init_model()
@@ -44,8 +44,8 @@ struct Animated_Model_Info_For_Shading {
 	Animated_Model model;     // needs be set by user
 	Texture* texture_color;   // optional set by user
 
-	bool initialized;  // set by shader_init_model()
-	Material_Shader* shader;    // set by shader_init_model()
+	bool initialized;         // set by shader_init_model()
+	Material_Shader* shader;  // set by shader_init_model()
 
 	GLuint shader_vao[MAX_FRAMES_PER_ANIMATION]; // set by shader_init_model()
 	GLuint shader_vbo[MAX_FRAMES_PER_ANIMATION]; // set by shader_init_model()

@@ -77,3 +77,21 @@ void draw_stone(Bender* p);
 // temporary for testing rendering the cube
 extern Model_Info_For_Shading base_tile_model_info;
 void init_models_for_drawing();
+
+
+extern union Loaded_Models {
+	struct {
+		Model_Info_For_Shading stone_tile;
+		Model_Info_For_Shading lava_tile;
+		Model_Info_For_Shading water_tile;
+		Model_Info_For_Shading stone_tile_ramp;
+		Model_Info_For_Shading stone_tile_ramp_special;
+		Model_Info_For_Shading cube;
+		Model_Info_For_Shading stone;
+		Model_Info_For_Shading bender;
+		Model_Info_For_Shading monster;
+	};
+
+	Model_Info_For_Shading as_array[9]; // make sure this is updated when new model is inserted
+
+} loaded_models;

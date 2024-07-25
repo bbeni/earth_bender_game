@@ -3,6 +3,8 @@
 #include "glad/glad.h"
 #include <cstdint>
 
+#include "models.hpp"
+
 struct Image {
 	int w, h, n_components;
 	unsigned char* data;
@@ -26,15 +28,35 @@ union Texture_Catalog {
 		Texture stone_tile_color;
 		Texture lava_tile_color;
 		Texture water_tile_color;
+		Texture fluffy_monster_color;
 	} names;
 
 	Texture as_array[sizeof(names)/sizeof(Texture)];
 };
 
-// load all textures defined below
+union Model_Catalog {
+	struct {
+		Static_Model stone_block;
+		Static_Model stone_tile;
+		Static_Model stone_tile_ramp;
+		Static_Model stone_tile_ramp_special;
+		Static_Model water_tile;
+		Static_Model fluffy_monster;
+	} names ;
+
+	Static_Model as_array[sizeof(names) / sizeof(Static_Model)];
+};
+
+
+
+// loading functions
 bool init_texture_catalog_disk_and_gpu();
+bool init_model_catalog_disk();
 
 // access the textures
 extern Texture_Catalog g_texture_catalog;
+// access the models
+extern Model_Catalog g_model_catalog;
+
 
 #endif // RESOURCES_H

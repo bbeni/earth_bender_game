@@ -137,19 +137,7 @@ Vec4 color_from_tile_type(Tile_Type type) {
 
 
 Animated_Model_Info_For_Shading player_model_info = { 0 };
-Model_Info_For_Shading stone_model_info = { 0 };
-
-Model_Info_For_Shading stone_tile_model_info = { 0 };
-Model_Info_For_Shading lava_tile_model_info = { 0 };
-Model_Info_For_Shading water_tile_model_info = { 0 };
-Model_Info_For_Shading stone_tile_ramp_model_info = { 0 };
-
-Model_Info_For_Shading base_tile_model_info = { 0 };
-Model_Info_For_Shading north_ramp_model_info = { 0 };
-Model_Info_For_Shading east_ramp_model_info = { 0 };
-Model_Info_For_Shading south_ramp_model_info = { 0 };
-Model_Info_For_Shading west_ramp_model_info = { 0 };
-
+Loaded_Models loaded_models = { 0 };
 
 void init_models_for_drawing() {
 
@@ -158,61 +146,63 @@ void init_models_for_drawing() {
 		exit(1);
 	}
 
-	//construct_cube_triangles(&player_model_info.model);
-	//construct_normals(&player_model_info.model);
+	if (!init_model_catalog_disk()) {
+		printf("Error: failed to load some models..\n");
+		exit(1);
+	}
 
-	stone_model_info.model.mesh = load_mesh_bada_file("../resources/3d_models/stone_block.bada");
-	stone_model_info.texture_color = &g_texture_catalog.names.stone_block_color;
-	shader_init_model(&shader_brdf, &stone_model_info);
+	loaded_models.stone.model         = g_model_catalog.names.stone_block;
+	loaded_models.stone.texture_color = &g_texture_catalog.names.stone_block_color;
+	shader_init_model(&shader_brdf, &loaded_models.stone);
 
-	stone_tile_model_info.model.mesh = load_mesh_bada_file("../resources/3d_models/stone_tile.bada");
-	stone_tile_model_info.texture_color = &g_texture_catalog.names.stone_tile_color;
-	shader_init_model(&shader_brdf, &stone_tile_model_info);
+	loaded_models.stone_tile.model = g_model_catalog.names.stone_tile;
+	loaded_models.stone_tile.texture_color = &g_texture_catalog.names.stone_tile_color;
+	shader_init_model(&shader_brdf, &loaded_models.stone_tile);
 
-	lava_tile_model_info.model.mesh = load_mesh_bada_file("../resources/3d_models/stone_tile.bada");
-	lava_tile_model_info.texture_color = &g_texture_catalog.names.lava_tile_color;
-	shader_init_model(&shader_brdf, &lava_tile_model_info);
+	loaded_models.lava_tile.model = g_model_catalog.names.stone_tile;
+	loaded_models.lava_tile.texture_color = &g_texture_catalog.names.lava_tile_color;
+	shader_init_model(&shader_brdf, &loaded_models.lava_tile);
 
-	water_tile_model_info.model.mesh = load_mesh_bada_file("../resources/3d_models/water_tile.bada");
-	water_tile_model_info.texture_color = &g_texture_catalog.names.water_tile_color;
-	shader_init_model(&shader_water, &water_tile_model_info);
+	loaded_models.water_tile.model = g_model_catalog.names.water_tile;
+	loaded_models.water_tile.texture_color = &g_texture_catalog.names.water_tile_color;
+	shader_init_model(&shader_water, &loaded_models.water_tile);
 
-	stone_tile_ramp_model_info.model.mesh = load_mesh_bada_file("../resources/3d_models/stone_tile_ramp.bada");
-	stone_tile_ramp_model_info.texture_color = &g_texture_catalog.names.stone_tile_color;
-	shader_init_model(&shader_brdf, &stone_tile_ramp_model_info);
+	loaded_models.stone_tile_ramp.model = g_model_catalog.names.stone_tile_ramp;
+	loaded_models.stone_tile_ramp.texture_color = &g_texture_catalog.names.stone_tile_color;
+	shader_init_model(&shader_brdf, &loaded_models.stone_tile_ramp);
+
+	loaded_models.stone_tile_ramp.model = g_model_catalog.names.stone_tile_ramp;
+	loaded_models.stone_tile_ramp.texture_color = &g_texture_catalog.names.stone_tile_color;
+	shader_init_model(&shader_brdf, &loaded_models.stone_tile_ramp);
+
+	loaded_models.stone_tile_ramp_special.model = g_model_catalog.names.stone_tile_ramp_special;
+	loaded_models.stone_tile_ramp_special.texture_color = &g_texture_catalog.names.stone_tile_color;
+	shader_init_model(&shader_brdf, &loaded_models.stone_tile_ramp_special);
+
+	make_cube_model(&loaded_models.cube.model);
+	loaded_models.cube.texture_color = &g_texture_catalog.names.default_color;
+	shader_init_model(&shader_brdf, &loaded_models.cube);
+
+	loaded_models.monster.model = g_model_catalog.names.fluffy_monster;
+	loaded_models.monster.texture_color = &g_texture_catalog.names.fluffy_monster_color;
+	shader_init_model(&shader_brdf, &loaded_models.monster);
+
+	loaded_models.bender.model.mesh = load_mesh_bada_file("../resources/3d_models/earth_bender_anim.bada");
+	loaded_models.bender.texture_color = &g_texture_catalog.names.earth_bender_color;
+	shader_init_model(&shader_brdf, &loaded_models.bender);
 
 	player_model_info.model = load_anim_bada_file("../resources/3d_models/earth_bender_anim.bada");
 	player_model_info.texture_color = &g_texture_catalog.names.earth_bender_color;
 	shader_init_animated_model(&shader_brdf, &player_model_info);
 
-	construct_tile_triangles(&base_tile_model_info.model);
-	construct_normals(&base_tile_model_info.model);
-	shader_init_model(&shader_phong, &base_tile_model_info);
-
-	construct_ramp_triangles(&north_ramp_model_info.model, Ramp_Orientation::NORTH);
-	construct_normals(&north_ramp_model_info.model);
-	shader_init_model(&shader_phong, &north_ramp_model_info);
-
-	construct_ramp_triangles(&south_ramp_model_info.model, Ramp_Orientation::SOUTH);
-	construct_normals(&south_ramp_model_info.model);
-	shader_init_model(&shader_phong, &south_ramp_model_info);
-
-	construct_ramp_triangles(&east_ramp_model_info.model, Ramp_Orientation::EAST);
-	construct_normals(&east_ramp_model_info.model);
-	shader_init_model(&shader_phong, &east_ramp_model_info);
-
-	construct_ramp_triangles(&west_ramp_model_info.model, Ramp_Orientation::WEST);
-	construct_normals(&west_ramp_model_info.model);
-	shader_init_model(&shader_phong, &west_ramp_model_info);
 
 }
 
 void draw_stone(Bender *p) {
-	Mat4 model_rotation = matrix_from_basis_vectors({ 1,0,0 }, { 0,1,0 }, { 0,0,1 });
-	Mat4 translation = matrix_translation(Vec3{ 4, 4, 1.0f });
+	Mat4 translation = matrix_translation(Vec3{ 5, 5, 0.15f });
 
-	shader_uniform_set(shader_brdf.gl_id, "model", translation * model_rotation * matrix_scale(0.5f));
-	shader_draw_call(&stone_model_info);
+	shader_uniform_set(shader_brdf.gl_id, "model", translation * matrix_rotation_euler(0.0f, 0.0f, get_time()));
+	shader_draw_call(&loaded_models.stone);
 }
 
 void draw_tile(Tile_Type type, Ramp_Orientation ramp_direction, float elevation, int16_t x, int16_t y) {
@@ -220,9 +210,9 @@ void draw_tile(Tile_Type type, Ramp_Orientation ramp_direction, float elevation,
 	if (type == Tile_Type::AIR) return;
 
 
-	auto model = &stone_tile_model_info;
-	if (type == Tile_Type::LAVA) model = &lava_tile_model_info;
-	if (type == Tile_Type::WATER) model = &water_tile_model_info;
+	auto model = &loaded_models.stone_tile;
+	if (type == Tile_Type::LAVA) model = &loaded_models.lava_tile;
+	if (type == Tile_Type::WATER) model = &loaded_models.water_tile;
 
 	GLuint current_shader = model->shader->gl_id;
 
@@ -242,19 +232,19 @@ void draw_tile(Tile_Type type, Ramp_Orientation ramp_direction, float elevation,
 
 	switch (ramp_direction) {
 	case Ramp_Orientation::SOUTH:
-		shader_draw_call(&stone_tile_ramp_model_info);
+		shader_draw_call(&loaded_models.stone_tile_ramp);
 		break;
 	case Ramp_Orientation::EAST:
 		shader_uniform_set(current_shader, "model", model_matrix * model_rotation_90());
-		shader_draw_call(&stone_tile_ramp_model_info);
+		shader_draw_call(&loaded_models.stone_tile_ramp);
 		break;
 	case Ramp_Orientation::NORTH:
 		shader_uniform_set(current_shader, "model", model_matrix * model_rotation_180());
-		shader_draw_call(&stone_tile_ramp_model_info);
+		shader_draw_call(&loaded_models.stone_tile_ramp);
 		break;
 	case Ramp_Orientation::WEST:
 		shader_uniform_set(current_shader, "model", model_matrix * model_rotation_270());
-		shader_draw_call(&stone_tile_ramp_model_info);
+		shader_draw_call(&loaded_models.stone_tile_ramp);
 		break;
 	default:
 		shader_draw_call(model);
@@ -366,13 +356,6 @@ void update_player(Bender* b, Level* floor) {
 	}
 
 	Vec3 direction = Vec3{ sinf(angle), cosf(angle) };
-
-
-	if (b->current_action == Action::WALKING) {
-		//move_towards(&p->fov, 72.0f, 90.0f, frame_time);
-	} else {
-		move_towards(&b->fov, 60.0f, 70.0f, frame_time);
-	}
 
 	b->velocity = direction * b->walk_speed;
 

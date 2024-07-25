@@ -535,19 +535,16 @@ void shader_draw_call(Animated_Model_Info_For_Shading* model_info, int frame_ind
 
 		int i = frame_index;
 		GLuint vao = model_info->shader_vao[i];
-		GLuint vbo = model_info->shader_vbo[i];
 		size_t vert_count = model_info->model.meshes[i].count;
 
 		check_gl_error_and_fail("before - shader_draw_call locations");
 
-
 		glBindVertexArray(vao);
-		//glBindBuffer(GL_ARRAY_BUFFER, vbo);
 
 		check_gl_error_and_fail("mid - shader_draw_call locations");
 
 		glDrawArrays(GL_TRIANGLES, 0, (GLsizei)vert_count);
-		//glBindBuffer(GL_ARRAY_BUFFER, 0);
+
 		glBindVertexArray(0);
 
 		check_gl_error_and_fail("end - shader_draw_call locations");

@@ -6,10 +6,10 @@
 #include <stdio.h>
 #include <cstdint>
 
-void construct_cube_triangles(Model* model) {
+void construct_cube_triangles(Static_Model* model) {
 	float s = 0.5f;
 
-	Vertex_Info_Array* m = &model->mesh;
+	Mesh* m = &model->mesh;
 
 	for (int i = -1; i < 2; i += 2) {
 
@@ -63,10 +63,10 @@ void construct_cube_triangles(Model* model) {
 
 
 // TODO these functions are kinda dirty... should use transformation matrices?
-void construct_tile_triangles(Model* model) {
+void construct_tile_triangles(Static_Model* model) {
 
 	construct_cube_triangles(model);
-	Vertex_Info_Array* m = &model->mesh;
+	Mesh* m = &model->mesh;
 
 	for (int i = 0; i < m->count; i++) {
 		if (m->data[i].position.z< 0.0f) {
@@ -76,10 +76,10 @@ void construct_tile_triangles(Model* model) {
 }
 
 
-void construct_ramp_triangles(Model* model, Ramp_Orientation ramp_orientation) {
+void construct_ramp_triangles(Static_Model* model, Ramp_Orientation ramp_orientation) {
 
 	construct_cube_triangles(model);
-	Vertex_Info_Array* m = &model->mesh;
+	Mesh* m = &model->mesh;
 
 	for (int i = 0; i < m->count; i++) {
 		if (m->data[i].position.z < 0.0f) {
@@ -115,7 +115,7 @@ void construct_ramp_triangles(Model* model, Ramp_Orientation ramp_orientation) {
 
 
 // calculate normals by face normal of triangles;
-void construct_normals(Model* model) {
+void construct_normals(Static_Model* model) {
 
 	assert(model->mesh.count % 3 == 0 && "vertex count needs be multiple of 3 for triangles.\n");
 
@@ -139,9 +139,9 @@ void construct_normals(Model* model) {
 
 }
 
-void make_cube_model(Model* model) {
+void make_cube_model(Static_Model* model) {
 	float s = 0.5f;
-	Vertex_Info_Array* m = &model->mesh;
+	Mesh* m = &model->mesh;
 
 	for (int i = -1; i < 2; i += 2) {
 
@@ -251,6 +251,7 @@ Animated_Model load_anim_bada_file(const char* file_path) {
 	model.count = frames_count;
 
 	for (int i = 0; i < frames_count; i++) {
+		model.meshes[i].capacity = 3 * faces_count;
 		model.meshes[i].count = 3 * faces_count;
 		model.meshes[i].data = (Vertex_Info*)malloc(sizeof(Vertex_Info) * model.meshes[i].count);
 		assert(model.meshes[i].data != NULL);
@@ -261,7 +262,7 @@ Animated_Model load_anim_bada_file(const char* file_path) {
 
 	for (int fn = 0; fn < frames_count; fn++) {
 
-		Vertex_Info_Array* mesh = &model.meshes[fn];
+		Mesh* mesh = &model.meshes[fn];
 
 		for (int i = 0; i < faces_count; i++) {
 
@@ -301,7 +302,7 @@ Animated_Model load_anim_bada_file(const char* file_path) {
 
 
 // read a .bada file generated with the blender script. will abort on error
-Vertex_Info_Array load_mesh_bada_file(const char* file_path) {
+Mesh load_mesh_bada_file(const char* file_path) {
 
 	// load the animated model and extract first frame
 	Animated_Model animated_model = load_anim_bada_file(file_path);

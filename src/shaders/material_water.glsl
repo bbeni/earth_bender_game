@@ -31,7 +31,7 @@ void main() {
 	frag_pos = vec3(model * vec4(vert_position, 1.0));
 	
 	frag_normal = normalize(mat3(model) * vert_normal).xyz;	
-	frag_uv_coord = vert_uv_coord + vec2(sin(time), time);
+	frag_uv_coord = vert_uv_coord + vec2(sin(time*0.4)*0.4, time*0.2);
 }
 
 #endif // VERTEX_SHADER
