@@ -187,7 +187,7 @@ void init_models_for_drawing() {
 	loaded_models.monster.texture_color = &g_texture_catalog.names.fluffy_monster_color;
 	shader_init_model(&shader_brdf, &loaded_models.monster);
 
-	loaded_models.bender.model.mesh = load_mesh_bada_file("../resources/3d_models/earth_bender_anim.bada");
+	loaded_models.bender.model = load_model_bada_file("../resources/3d_models/earth_bender_anim.bada");
 	loaded_models.bender.texture_color = &g_texture_catalog.names.earth_bender_color;
 	shader_init_model(&shader_brdf, &loaded_models.bender);
 

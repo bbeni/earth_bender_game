@@ -60,5 +60,6 @@ void shader_init_animated_model(Material_Shader* shader, Animated_Model_Info_For
 
 // draw the model (shader is stored by shader_send_attributes)
 void shader_draw_call(Model_Info_For_Shading* model_info);
+void shader_draw_call(Model_Info_For_Shading* model_info, Material_Shader* shader);
 void shader_draw_call(Animated_Model_Info_For_Shading* model_info, int frame_index);
 //void shader_flush(Shader* shader);

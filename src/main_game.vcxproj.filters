@@ -83,10 +83,14 @@
     <ClInclude Include="catalogs.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="entities.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\material_brdf.glsl" />
     <None Include="shaders\material_phong.glsl" />
     <None Include="shaders\material_water.glsl" />
+    <None Include="shaders\editor_highlight.glsl" />
   </ItemGroup>
 </Project>

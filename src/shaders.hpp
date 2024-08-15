@@ -11,6 +11,7 @@
 void backend_create_shaders();
 void shader_uniform_set(GLuint shader_id, const char* value_name, const Mat4& mat4);
 void shader_uniform_set(GLuint shader_id, const char* value_name, const Vec3& vec3);
+void shader_uniform_set(GLuint shader_id, const char* value_name, const Vec4& vec4);
 void shader_uniform_set(GLuint shader_id, const char* value_name, const float value);
 GLuint compile_shader(const char* shader_text, int shader_length = -1);
 
@@ -29,6 +30,8 @@ extern Immediate_Shader immediate_shader_color;
 enum Shader_Flags : uint32_t {
 	NO_SHADER_FLAGS = 0x0,
 	USES_TEXTURE = 0x1,
+	USES_ALPHA = 0x2,
+	WIREFRAME = 0x4,
 };
 
 typedef struct Material_Shader {
@@ -45,6 +48,7 @@ extern Material_Shader shader_phong;
 extern Material_Shader shader_brdf;
 extern Material_Shader shader_water;
 
+extern Material_Shader shader_editor_highlight;
 
 // gets added to the source when you call compile_shader
 static const char* _VERTEX_SHADER_HEADER = "\

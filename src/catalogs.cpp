@@ -36,9 +36,7 @@ bool init_texture_catalog_disk_and_gpu() {
 }
 
 Static_Model load_model(const char* file_path) {
-	Static_Model m = { 0 };
-	m.mesh = load_mesh_bada_file(file_path);
-	return m;
+	return load_model_bada_file(file_path);
 }
 
 bool init_model_catalog_disk() {

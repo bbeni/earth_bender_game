@@ -19,12 +19,12 @@ void construct_cube_triangles(Static_Model* model) {
 		Vertex_Info v4 = { -s,      s, -s * i };
 
 		// seems legit
-		d_append(m, v1);
-		d_append(m, v2);
-		d_append(m, v4);
-		d_append(m, v4);
-		d_append(m, v2);
-		d_append(m, v3);
+		array_add(m, v1);
+		array_add(m, v2);
+		array_add(m, v4);
+		array_add(m, v4);
+		array_add(m, v2);
+		array_add(m, v3);
 	}
 
 	for (int i = -1; i < 2; i += 2) {
@@ -35,12 +35,12 @@ void construct_cube_triangles(Static_Model* model) {
 		Vertex_Info v3 = { s, -s * i,  s };
 		Vertex_Info v2 = { -s, -s * i,  s };
 
-		d_append(m, v1);
-		d_append(m, v2);
-		d_append(m, v4);
-		d_append(m, v4);
-		d_append(m, v2);
-		d_append(m, v3);
+		array_add(m, v1);
+		array_add(m, v2);
+		array_add(m, v4);
+		array_add(m, v4);
+		array_add(m, v2);
+		array_add(m, v3);
 	}
 
 
@@ -51,12 +51,12 @@ void construct_cube_triangles(Static_Model* model) {
 		Vertex_Info v3 = { s * i,  s,  s };
 		Vertex_Info v4 = { s * i, -s,  s };
 
-		d_append(m, v1);
-		d_append(m, v2);
-		d_append(m, v4);
-		d_append(m, v4);
-		d_append(m, v2);
-		d_append(m, v3);
+		array_add(m, v1);
+		array_add(m, v2);
+		array_add(m, v4);
+		array_add(m, v4);
+		array_add(m, v2);
+		array_add(m, v3);
 	}
 
 }
@@ -151,12 +151,12 @@ void make_cube_model(Static_Model* model) {
 		Vertex_Info v4 = { -s, s, -s * i , 0, 0, 0, 1, 0 };
 
 		// seems legit
-		d_append(m, v1);
-		d_append(m, v2);
-		d_append(m, v4);
-		d_append(m, v4);
-		d_append(m, v2);
-		d_append(m, v3);
+		array_add(m, v1);
+		array_add(m, v2);
+		array_add(m, v4);
+		array_add(m, v4);
+		array_add(m, v2);
+		array_add(m, v3);
 	}
 
 	for (int i = -1; i < 2; i += 2) {
@@ -167,12 +167,12 @@ void make_cube_model(Static_Model* model) {
 		Vertex_Info v3 = { s, -s * i,  s, 0, 0, 0, 1, 1 };
 		Vertex_Info v2 = { -s, -s * i,  s, 0, 0, 0, 1, 0 };
 
-		d_append(m, v1);
-		d_append(m, v2);
-		d_append(m, v4);
-		d_append(m, v4);
-		d_append(m, v2);
-		d_append(m, v3);
+		array_add(m, v1);
+		array_add(m, v2);
+		array_add(m, v4);
+		array_add(m, v4);
+		array_add(m, v2);
+		array_add(m, v3);
 	}
 
 
@@ -183,12 +183,12 @@ void make_cube_model(Static_Model* model) {
 		Vertex_Info v3 = { s * i,  s,  s, 0, 0, 0, 0, 1 };
 		Vertex_Info v4 = { s * i, -s,  s, 0, 0, 0, 1, 1 };
 
-		d_append(m, v1);
-		d_append(m, v2);
-		d_append(m, v4);
-		d_append(m, v4);
-		d_append(m, v2);
-		d_append(m, v3);
+		array_add(m, v1);
+		array_add(m, v2);
+		array_add(m, v4);
+		array_add(m, v4);
+		array_add(m, v2);
+		array_add(m, v3);
 	}
 
 	construct_normals(model);
@@ -302,9 +302,32 @@ Animated_Model load_anim_bada_file(const char* file_path) {
 
 
 // read a .bada file generated with the blender script. will abort on error
-Mesh load_mesh_bada_file(const char* file_path) {
+Static_Model load_model_bada_file(const char* file_path) {
+
+	Static_Model model = { 0 };
 
 	// load the animated model and extract first frame
 	Animated_Model animated_model = load_anim_bada_file(file_path);
-	return animated_model.meshes[0];
+
+	model.mesh = animated_model.meshes[0];
+
+	// find minimal bounding box
+	float min_x = 0, min_y = 0, min_z = 0;
+	float max_x = 0, max_y = 0, max_z = 0;
+
+	for (int i = 0; i < model.mesh.count; i++) {
+		Vec3 point = model.mesh.data[i].position;
+		if (point.x > max_x) max_x = point.x;
+		if (point.y > max_y) max_y = point.y;
+		if (point.z > max_z) max_z = point.z;
+
+		if (point.x < min_x) min_x = point.x;
+		if (point.y < min_y) min_y = point.y;
+		if (point.z < min_z) min_z = point.z;
+	}
+
+	model.bounding_box.min = Vec3{ min_x, min_y, min_z };
+	model.bounding_box.max = Vec3{ max_x, max_y, max_z };
+
+	return model;
 }

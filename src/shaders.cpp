@@ -123,6 +123,8 @@ Material_Shader shader_phong;
 Material_Shader shader_brdf;
 Material_Shader shader_water;
 
+Material_Shader shader_editor_highlight;
+
 // TODO: save loactions in hash_table
 void shader_uniform_set(GLuint shader_id, const char* value_name, const Mat4& mat4) {
 	glUseProgram(shader_id); // temporary
@@ -149,6 +151,20 @@ void shader_uniform_set(GLuint shader_id, const char* value_name, const Vec3& ve
 
 	glUniform3fv(location, 1, &vec3.x);
 	check_gl_error_and_fail("end - shader_uniform_set(vec3)");
+}
+
+void shader_uniform_set(GLuint shader_id, const char* value_name, const Vec4& vec4) {
+	glUseProgram(shader_id); // temporary
+
+	GLuint location = glGetUniformLocation(shader_id, value_name);
+	check_gl_error_and_fail("location - shader_uniform_set(vec4)");
+	if (location == -1) {
+		printf("Error: OpenGL cannot find uniform location with name '%s' in shader_id %d.\n", value_name, shader_id);
+		exit(1);
+	}
+
+	glUniform4fv(location, 1, &vec4.x);
+	check_gl_error_and_fail("end - shader_uniform_set(vec4)");
 }
 
 void shader_uniform_set(GLuint shader_id, const char* value_name, const float value) {
@@ -208,15 +224,7 @@ void init_phong_uniforms() {
 
 }
 
-void init_common_uniforms(GLuint shader_id) {
-
-	Vec3 light_color = { 0.95f, 0.8f, 0.7f };
-	float light_strength = 5.0f;
-
-	Vec3 object_color = { 0.7f, 0.9f, 0.3f };
-	float ambient_strength = 0.0f;
-
-	
+void init_common_mvp(GLuint shader_id) {
 	Mat4 view = matrix_camera(Vec3{ -3.0f, 3.0f, -3.0f }, Vec3{ 1.0f, 0.0f, 1.0f }, Vec3{ 0.0f, 1.0f, 0.0f });
 
 	// Perspective projection
@@ -225,7 +233,6 @@ void init_common_uniforms(GLuint shader_id) {
 	float far_plane = 1000.0f;
 
 	Mat4 projection = matrix_perspective_projection(fov, 1.4f, near_plane, far_plane);
-	//projection = matrix_perspective_orthographic(-3.5f, 1.5f, 7.0f, 3.0f, near_plane, far_plane);
 
 	// Model transformation
 	Mat4 model = matrix_scale(1.0f);
@@ -233,7 +240,18 @@ void init_common_uniforms(GLuint shader_id) {
 	shader_uniform_set(shader_id, "projection", projection);
 	shader_uniform_set(shader_id, "model", model);
 	shader_uniform_set(shader_id, "view", view);
+}
 
+void init_common_material_uniforms(GLuint shader_id) {
+
+	init_common_mvp(shader_id);
+
+	Vec3 light_color = { 0.95f, 0.8f, 0.7f };
+	float light_strength = 5.0f;
+
+	Vec3 object_color = { 0.7f, 0.9f, 0.3f };
+	float ambient_strength = 0.0f;
+	
 	shader_uniform_set(shader_id, "light_direction", light_direction);
 	shader_uniform_set(shader_id, "light_color", light_color);
 	shader_uniform_set(shader_id, "light_strength", light_strength);
@@ -247,7 +265,7 @@ void init_brdf_uniforms() {
 
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
-	init_common_uniforms(shader_brdf.gl_id);
+	init_common_material_uniforms(shader_brdf.gl_id);
 }
 
 
@@ -257,9 +275,18 @@ void init_water_uniforms() {
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 
-	init_common_uniforms(shader_water.gl_id);
+	init_common_material_uniforms(shader_water.gl_id);
 
 	shader_uniform_set(shader_water.gl_id, "time", 0.5f);
+}
+
+void init_editor_highlight_uniforms() {
+	glUseProgram(shader_editor_highlight.gl_id);
+
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
+
+	init_common_mvp(shader_editor_highlight.gl_id);
 }
 
 
@@ -304,7 +331,6 @@ void backend_create_shaders() {
 	shader_brdf.position_location = 0;
 	shader_brdf.normal_location = 1;
 	shader_brdf.uv_location = 2;
-
 	shader_brdf.flags = Shader_Flags::USES_TEXTURE;
 	init_brdf_uniforms();
 
@@ -314,7 +340,15 @@ void backend_create_shaders() {
 	shader_water.position_location = 0;
 	shader_water.normal_location = 1;
 	shader_water.uv_location = 2;
-
 	shader_water.flags = Shader_Flags::USES_TEXTURE;
 	init_water_uniforms();
+
+	// editor highlight shader
+	shader_editor_highlight = { 0 };
+	shader_editor_highlight.gl_id = load_shader_from_path("shaders/editor_highlight.glsl");
+	shader_editor_highlight.position_location = 0;
+	//shader_editor_highlight.normal_location = 1;
+	//shader_editor_highlight.uv_location = 2;
+	shader_editor_highlight.flags = (Shader_Flags) (Shader_Flags::USES_ALPHA | Shader_Flags::WIREFRAME);
+	init_editor_highlight_uniforms();
 }

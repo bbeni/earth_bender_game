@@ -5,6 +5,8 @@
 #include <time.h>
 #include "shaders.hpp"
 
+int screen_width;
+int screen_height;
 
 struct Editor_State {
 	bool initialized;
@@ -12,6 +14,18 @@ struct Editor_State {
 	Vec3 camera_direction;
 	Vec3 camera_up;
 	float zoom_level;
+
+	float fov;
+	float near_plane;
+	float far_plane;
+	float aspect;
+
+	int item_hovered;
+	int item_selected;
+	size_t item_count;
+	Box *item_boxes;
+
+	static const int items_per_row = 20;
 };
 
 Editor_State editor = { 0 };
@@ -20,9 +34,42 @@ Editor_State editor = { 0 };
 void draw_editor(Level *level) {
 	if (!editor.initialized) {
 		editor.initialized = true;
+
+		editor.zoom_level = 5;
+
 		editor.camera_pos = Vec3{ -6, -6, 15 };
 		editor.camera_direction = Vec3{ 1, 1, -1.5f };
+		normalize_or_z_axis(&editor.camera_direction);
+		
+		// calculate the real up direction based on forward (camera_direction)
 		editor.camera_up = Vec3 {0, 0, 1};
+		Vec3 side = cross(editor.camera_direction, editor.camera_up);
+		normalize_or_z_axis(&side);
+		editor.camera_up = cross(side, editor.camera_direction);
+		normalize_or_z_axis(&editor.camera_up);
+
+		// Perspective projection
+		editor.fov = 60.0f;
+		editor.near_plane = 0.01f;
+		editor.far_plane = 1000.0f;
+		editor.aspect = 1.4f;
+
+		editor.item_hovered = -1;
+		editor.item_selected = -1;
+		editor.item_count = sizeof(loaded_models.as_array) / sizeof(loaded_models.as_array[0]);
+
+		// TODO: handle free
+		Box* box = (Box*)malloc(editor.item_count * sizeof(Box));
+		assert(box != NULL);
+
+		for (int i = 0; i < editor.item_count; i++) {
+			int items_per_row = editor.items_per_row;
+			Vec3 item_pos = Vec3{ -2 - (float)(i / items_per_row), (float)(i % items_per_row), 0 };
+			box[i].max = item_pos + Vec3{ 1.0f, 1.0f, 1.0f };
+			box[i].min = item_pos - Vec3{ 0.0f, 0.0f, 0.0f };
+		}
+
+		editor.item_boxes = box;
 	}
 
 
@@ -31,24 +78,83 @@ void draw_editor(Level *level) {
 	Mat4 view = matrix_camera(pos, editor.camera_direction, editor.camera_up);
 	shader_uniform_set(shader_brdf.gl_id, "view", view);
 	shader_uniform_set(shader_water.gl_id, "view", view);
+	shader_uniform_set(shader_editor_highlight.gl_id, "view", view);
+
+	// TODO: don't need to update every frame
+	Mat4 projection = matrix_perspective_projection(editor.fov, editor.aspect, editor.near_plane, editor.far_plane);
+	shader_uniform_set(shader_brdf.gl_id, "projection", projection);
+	shader_uniform_set(shader_water.gl_id, "projection", projection);
+	shader_uniform_set(shader_editor_highlight.gl_id, "projection", projection);
+
 	shader_uniform_set(shader_water.gl_id, "time", get_time());
 	shader_uniform_set(shader_brdf.gl_id, "ambient_strength", 0.5f);
 
-	for (int i = 0; i < sizeof(loaded_models.as_array) / sizeof(loaded_models.as_array[0]); i++) {
-		
-		static const int items_per_row = 20;
+	int selected = editor.item_selected;
+	int hovered = editor.item_hovered;
 
+	for (int i = 0; i < editor.item_count; i++) {
+		
+		int items_per_row = editor.items_per_row;
 		Mat4 model_rotation = matrix_rotation_euler(0, 0, 0);
-		Mat4 translation = matrix_translation(Vec3{ -2 - (float)(i / items_per_row), (float)(i % items_per_row), 0 });
+		Vec3 item_pos = Vec3{ -2 - (float)(i / items_per_row), (float)(i % items_per_row), 0 };
+		Mat4 translation = matrix_translation(item_pos);
 		shader_uniform_set(shader_brdf.gl_id, "model", translation * model_rotation);
 		shader_uniform_set(shader_water.gl_id, "model", translation * model_rotation);
 		shader_draw_call(&loaded_models.as_array[i]);
+		
+		if (i == selected) {
+			shader_uniform_set(shader_editor_highlight.gl_id, "highlight_color", Vec4{ 0.00f, 0.99f, 0.01f, 0.9f });
+			Mat4 scale = matrix_scale(1.002f);
+			shader_uniform_set(shader_editor_highlight.gl_id, "model", translation * model_rotation * scale);
+			shader_draw_call(&loaded_models.as_array[i], &shader_editor_highlight);
+		}
+
+		if (i == hovered) {
+			shader_uniform_set(shader_editor_highlight.gl_id, "highlight_color", Vec4{ 0.99f, 0.99f, 0.99f, 0.9f });
+			Mat4 scale = matrix_scale(1.002f);
+			shader_uniform_set(shader_editor_highlight.gl_id, "model", translation * model_rotation * scale);
+			shader_draw_call(&loaded_models.as_array[i], &shader_editor_highlight);
+		}
+
+
 	}
+
 	shader_uniform_set(shader_brdf.gl_id, "ambient_strength", 0.05f);
-
-
 	draw_floor(level);
+}
 
+// find the hovered block index that is placed on the side
+// TODO: factor code that is copy pasted (i.e item position)
+void editor_find_item_hover_index() {
+
+	Ray ray = {0};
+
+	ray.origin = editor.camera_pos + editor.camera_direction * editor.zoom_level; // TODO: refactor copy paste from above
+
+	{
+		Vec3 direction = editor.camera_direction; // assume normalized!
+
+		float d = 1.0f / tan(editor.fov * 0.5f);
+		float n_x = (((float)mouse_x / (float)screen_width)) - 0.5f;
+		float n_y = ((((float)mouse_y / (float)screen_height)) - 0.5f) / editor.aspect;
+
+		direction = direction * d;
+		direction += editor.camera_up * n_y * 0.25f;
+
+		Vec3 camera_right = cross(editor.camera_up, editor.camera_direction);
+		direction += camera_right * n_x * 0.25f;
+
+		normalize_or_z_axis(&direction);
+
+		ray.direction = direction;
+	}
+
+	editor.item_hovered = -1;
+	auto result = ray_trace(ray, editor.item_boxes, editor.item_count);
+	if (result.did_hit) {
+		editor.item_hovered = result.hit_index;
+		assert(result.hit_index < editor.item_count);
+	}
 }
 
 void handle_input_movement_editor() {
@@ -73,7 +179,15 @@ void handle_input_movement_editor() {
 
 	normalize_or_zero(&direction);
 
-	editor.camera_pos += Vec3{direction.x, direction.y, 0} * get_frame_time() * 10;
+	editor.camera_pos += Vec3{direction.x, direction.y, 0} * get_frame_time() * 15;
+
+	editor_find_item_hover_index();
+
+	if ((get_key_flags_state((uint32_t)Key_Code::LEFT_BTN) & Key_State_Flags::DOWN)) {
+		if (editor.item_hovered >= 0) {
+			editor.item_selected = editor.item_hovered;
+		}
+	}
 }
 
 void handle_input_walking(Bender &bender) {
@@ -115,10 +229,10 @@ enum class Program_State {
 
 int main() {
 
-	int width = 1280;
-	int height = 860;
+	screen_width = 1280;
+	screen_height = 860;
 
-	Window_Info window_info = create_window(width, height);
+	Window_Info window_info = create_window(screen_width, screen_height);
 	backend_init(&window_info);
 
 	Window_Info_For_Restore saved_window = { 0 };
@@ -139,7 +253,7 @@ int main() {
 	Bender bender = { 0 };
 	bender.pos = Vec3{1.0f, 1.0f, 0.5f };
 	bender.direction_angle = 0.0f;
-	bender.aspect = (float)width/(float)height;
+	bender.aspect = (float)screen_width /(float)screen_height;
 
 	bender.turn_speed = 6.0f;
 	bender.walk_speed = 4.0f;
@@ -174,10 +288,10 @@ int main() {
 				if (event.key_code == Key_Code::F && (event.modifiers & CTRL)) {
 					fullscreen = !fullscreen;
 					Vec2 new_size = toggle_fullscreen(window_info.window_handle, fullscreen, &saved_window);
-					width = new_size.x;
-					height = new_size.y;
-					adjust_viewport_size(width, height);
-					float aspect = (float)width / (float)height;
+					screen_width = new_size.x;
+					screen_height = new_size.y;
+					adjust_viewport_size(screen_width, screen_height);
+					float aspect = (float)screen_width / (float)screen_height;
 				}
 
 				if (event.key_code == Key_Code::O) {
@@ -207,8 +321,8 @@ int main() {
 			// editor specific events
 			if (program_state == Program_State::EDITOR) {
 				if (event.type == MOUSE_WHEEL_V) {
-					editor.zoom_level += event.wheel_delta * 0.004f;
-					clamp(&editor.zoom_level, 0, 9.6f); // heuristic
+					editor.zoom_level += event.wheel_delta * 0.02f;
+					clamp(&editor.zoom_level, 0, 20.6f); // heuristic
 				}
 			}
 
@@ -250,7 +364,7 @@ int main() {
 				}
 			}
 
-			Vec2 pos = { (float)2*mouse_x/width - 1.0f, -(float)2*mouse_y/height + 1.0f };
+			Vec2 pos = { (float)2*mouse_x/ screen_width - 1.0f, -(float)2*mouse_y/ screen_height + 1.0f };
 			Vec2 size = { 0.05f, 0.075f };
 
 			immediate_quad(pos, size, color);

@@ -19,7 +19,7 @@ void*  data;     // any pointer for that matter!
 #define DYN_ARRAY_INITIAL_CAPACITY 128 
 
 // append an item and reallocate array after it doubled in size
-#define d_append(dyn_array, item) \
+#define array_add(dyn_array, item) \
 	do { \
 		if ((dyn_array)->count >= (dyn_array)->capacity) { \
 			if ((dyn_array)->capacity == 0) { \
@@ -33,8 +33,10 @@ void*  data;     // any pointer for that matter!
 		(dyn_array)->data[(dyn_array)->count++] = (item); \
 	} while (0)
 
+// #define array_init(dyn_array, cap)
+
 // free the array
-#define d_free(dyn_array) \
+#define array_free(dyn_array) \
 	DYN_ARRAY_FREE((dyn_array)->items)
 
 // String dynamic array

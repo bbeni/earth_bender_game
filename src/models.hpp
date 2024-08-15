@@ -19,8 +19,8 @@ struct Mesh {
 
 struct Static_Model {
 	Mesh mesh;
+	Box bounding_box;
 };
-
 
 #define MAX_FRAMES_PER_ANIMATION 128
 struct Animated_Model {
@@ -47,9 +47,6 @@ void construct_normals(Static_Model* model);
 // make a cube with verts, normals and uvs set
 void make_cube_model(Static_Model* model);
 
-
 // loading function for my own 3d model format
-Mesh load_mesh_bada_file(const char* file_path);
-
-// @Temporary
+Static_Model load_model_bada_file(const char* file_path);
 Animated_Model load_anim_bada_file(const char* file_path);

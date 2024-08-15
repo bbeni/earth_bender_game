@@ -480,40 +480,61 @@ void shader_init_animated_model(Material_Shader* shader, Animated_Model_Info_For
 }
 
 void shader_draw_call(Model_Info_For_Shading* model_info) {
-
 	if (model_info->initialized) {
-
 		Material_Shader* shader = model_info->shader;
-		glUseProgram(shader->gl_id);
+		shader_draw_call(model_info, shader);
+	}
+}
+
+// WARNING does not check if model_info or shader is initialized!
+void shader_draw_call(Model_Info_For_Shading* model_info, Material_Shader* shader) {
+	
+	glUseProgram(shader->gl_id);
+
+	GLuint draw_type = GL_TRIANGLES;
+
+	if (!(shader->flags & Shader_Flags::NO_SHADER_FLAGS)) {
 
 		if (shader->flags & Shader_Flags::USES_TEXTURE && model_info->texture_color) {
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, model_info->texture_color->gpu_handle);
 		}
 
-		glEnable(GL_DEPTH_TEST);
 
-		GLuint vao = model_info->shader_vao;
-		GLuint vbo = model_info->shader_vbo;
-		size_t vert_count = model_info->model.mesh.count;
+		if (shader->flags & Shader_Flags::USES_ALPHA) {
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			glEnable(GL_BLEND);
+		}
 
-		check_gl_error_and_fail("before - shader_draw_call locations");
-
-
-		glBindVertexArray(vao);
-		//glBindBuffer(GL_ARRAY_BUFFER, vbo);
-
-		check_gl_error_and_fail("mid - shader_draw_call locations");
-
-
-		glDrawArrays(GL_TRIANGLES, 0, (GLsizei)vert_count);
-		//glBindBuffer(GL_ARRAY_BUFFER, 0);
-		glBindVertexArray(0);
-
-		check_gl_error_and_fail("end - shader_draw_call locations");
+		if (shader->flags & Shader_Flags::WIREFRAME) {
+			draw_type = GL_LINE_STRIP;
+			glLineWidth(3.0f);
+			//glEnable(GL_LINE_SMOOTH);
+			//glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+		}
 	}
-}
 
+
+	GLuint vao = model_info->shader_vao;
+	GLuint vbo = model_info->shader_vbo;
+	size_t vert_count = model_info->model.mesh.count;
+
+	check_gl_error_and_fail("before - shader_draw_call locations");
+
+
+	glBindVertexArray(vao);
+	//glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+	check_gl_error_and_fail("mid - shader_draw_call locations");
+
+
+	glDrawArrays(draw_type, 0, (GLsizei)vert_count);
+	//glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+
+	check_gl_error_and_fail("end - shader_draw_call locations");
+
+}
 
 // @CopyPasta from above
 void shader_draw_call(Animated_Model_Info_For_Shading* model_info, int frame_index) {

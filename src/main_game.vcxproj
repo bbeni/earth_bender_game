@@ -147,6 +147,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="data_stuff.h" />
+    <ClInclude Include="entities.hpp" />
     <ClInclude Include="game.hpp" />
     <ClInclude Include="glad\glad.h" />
     <ClInclude Include="glad\khrplatform.h" />
@@ -160,6 +161,7 @@
     <ClInclude Include="stb_libraries\stb_image.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="shaders\editor_highlight.glsl" />
     <None Include="shaders\material_brdf.glsl" />
     <None Include="shaders\material_phong.glsl" />
     <None Include="shaders\material_water.glsl" />
