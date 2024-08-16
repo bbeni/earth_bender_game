@@ -139,6 +139,7 @@
     <ClCompile Include="input_and_window.cpp" />
     <ClCompile Include="mathematics.cpp" />
     <ClCompile Include="models.cpp" />
+    <ClCompile Include="ray.cpp" />
     <ClCompile Include="rendering_backend.cpp" />
     <ClCompile Include="catalogs.cpp" />
     <ClCompile Include="resource_loading.cpp" />
@@ -154,6 +155,7 @@
     <ClInclude Include="input_and_window.hpp" />
     <ClInclude Include="mathematics.hpp" />
     <ClInclude Include="models.hpp" />
+    <ClInclude Include="ray.hpp" />
     <ClInclude Include="rendering_backend.hpp" />
     <ClInclude Include="catalogs.hpp" />
     <ClInclude Include="resource_loading.hpp" />

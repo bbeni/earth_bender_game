@@ -45,6 +45,9 @@
     <ClCompile Include="catalogs.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ray.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="input_and_window.hpp">
@@ -84,6 +87,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="entities.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ray.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "mathematics.hpp"
+#include "ray.hpp"
 
 // 3d rendering stuff
 

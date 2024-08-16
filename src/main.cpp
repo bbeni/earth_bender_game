@@ -4,6 +4,7 @@
 
 #include <time.h>
 #include "shaders.hpp"
+#include "ray.hpp"
 
 int screen_width;
 int screen_height;
@@ -65,8 +66,10 @@ void draw_editor(Level *level) {
 		for (int i = 0; i < editor.item_count; i++) {
 			int items_per_row = editor.items_per_row;
 			Vec3 item_pos = Vec3{ -2 - (float)(i / items_per_row), (float)(i % items_per_row), 0 };
-			box[i].max = item_pos + Vec3{ 1.0f, 1.0f, 1.0f };
-			box[i].min = item_pos - Vec3{ 0.0f, 0.0f, 0.0f };
+			//box[i].max = item_pos + Vec3{ 0.5f, 0.5f, 1.0f };
+			//box[i].min = item_pos - Vec3{ -0.5f, -0.5f, 0.0f };
+			box[i].max = loaded_models.as_array[i].model.bounding_box.max + item_pos;
+			box[i].min = loaded_models.as_array[i].model.bounding_box.min + item_pos;
 		}
 
 		editor.item_boxes = box;
@@ -150,7 +153,7 @@ void editor_find_item_hover_index() {
 	}
 
 	editor.item_hovered = -1;
-	auto result = ray_trace(ray, editor.item_boxes, editor.item_count);
+	auto result = ray_cast(ray, editor.item_boxes, editor.item_count);
 	if (result.did_hit) {
 		editor.item_hovered = result.hit_index;
 		assert(result.hit_index < editor.item_count);
