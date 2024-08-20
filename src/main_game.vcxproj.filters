@@ -48,6 +48,9 @@
     <ClCompile Include="ray.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="stb_libraries\stb_ds.h">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="input_and_window.hpp">
@@ -98,5 +101,6 @@
     <None Include="shaders\material_phong.glsl" />
     <None Include="shaders\material_water.glsl" />
     <None Include="shaders\editor_highlight.glsl" />
+    <None Include="shaders\editor_bounding_box.glsl" />
   </ItemGroup>
 </Project>

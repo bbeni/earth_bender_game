@@ -29,7 +29,6 @@ struct Animated_Model {
 	Mesh meshes[MAX_FRAMES_PER_ANIMATION];
 };
 
-
 enum Ramp_Orientation {
 	FLAT = 0,
 	NORTH,
@@ -51,3 +50,13 @@ void make_cube_model(Static_Model* model);
 // loading function for my own 3d model format
 Static_Model load_model_bada_file(const char* file_path);
 Animated_Model load_anim_bada_file(const char* file_path);
+
+Box find_bounding_box(Mesh* mesh);
+
+struct Box_Line_Model {
+	Vec3 points[12 * 2]; // 12 edges * 2 points
+};
+
+//editor stuff
+void construct_box_lines(Box_Line_Model* box);
+Static_Model construct_box_lines();

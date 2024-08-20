@@ -31,50 +31,53 @@ struct Editor_State {
 
 Editor_State editor = { 0 };
 
+void init_editor() {
+
+	editor.zoom_level = 5;
+
+	editor.camera_pos = Vec3{ -6, -6, 15 };
+	editor.camera_direction = Vec3{ 1, 1, -1.5f };
+	normalize_or_z_axis(&editor.camera_direction);
+
+	// calculate the real up direction based on forward (camera_direction)
+	editor.camera_up = Vec3{ 0, 0, 1 };
+	Vec3 side = cross(editor.camera_direction, editor.camera_up);
+	normalize_or_z_axis(&side);
+	editor.camera_up = cross(side, editor.camera_direction);
+	normalize_or_z_axis(&editor.camera_up);
+
+	// Perspective projection
+	editor.fov = 60.0f;
+	editor.near_plane = 0.01f;
+	editor.far_plane = 1000.0f;
+	editor.aspect = 1.4f;
+
+	editor.item_hovered = -1;
+	editor.item_selected = -1;
+	editor.item_count = sizeof(loaded_models.as_array) / sizeof(loaded_models.as_array[0]);
+
+	// TODO: handle free
+	Box* box = (Box*)malloc(editor.item_count * sizeof(Box));
+	assert(box != NULL);
+
+	for (int i = 0; i < editor.item_count; i++) {
+		int items_per_row = editor.items_per_row;
+		Vec3 item_pos = Vec3{ -2 - (float)(i / items_per_row), (float)(i % items_per_row), 0 };
+		//box[i].max = item_pos + Vec3{ 0.5f, 0.5f, 1.0f };
+		//box[i].min = item_pos - Vec3{ -0.5f, -0.5f, 0.0f };
+		box[i].max = loaded_models.as_array[i].model.bounding_box.max + item_pos;
+		box[i].min = loaded_models.as_array[i].model.bounding_box.min + item_pos;
+	}
+
+	editor.item_boxes = box;
+}
+
 
 void draw_editor(Level *level) {
 	if (!editor.initialized) {
 		editor.initialized = true;
-
-		editor.zoom_level = 5;
-
-		editor.camera_pos = Vec3{ -6, -6, 15 };
-		editor.camera_direction = Vec3{ 1, 1, -1.5f };
-		normalize_or_z_axis(&editor.camera_direction);
-		
-		// calculate the real up direction based on forward (camera_direction)
-		editor.camera_up = Vec3 {0, 0, 1};
-		Vec3 side = cross(editor.camera_direction, editor.camera_up);
-		normalize_or_z_axis(&side);
-		editor.camera_up = cross(side, editor.camera_direction);
-		normalize_or_z_axis(&editor.camera_up);
-
-		// Perspective projection
-		editor.fov = 60.0f;
-		editor.near_plane = 0.01f;
-		editor.far_plane = 1000.0f;
-		editor.aspect = 1.4f;
-
-		editor.item_hovered = -1;
-		editor.item_selected = -1;
-		editor.item_count = sizeof(loaded_models.as_array) / sizeof(loaded_models.as_array[0]);
-
-		// TODO: handle free
-		Box* box = (Box*)malloc(editor.item_count * sizeof(Box));
-		assert(box != NULL);
-
-		for (int i = 0; i < editor.item_count; i++) {
-			int items_per_row = editor.items_per_row;
-			Vec3 item_pos = Vec3{ -2 - (float)(i / items_per_row), (float)(i % items_per_row), 0 };
-			//box[i].max = item_pos + Vec3{ 0.5f, 0.5f, 1.0f };
-			//box[i].min = item_pos - Vec3{ -0.5f, -0.5f, 0.0f };
-			box[i].max = loaded_models.as_array[i].model.bounding_box.max + item_pos;
-			box[i].min = loaded_models.as_array[i].model.bounding_box.min + item_pos;
-		}
-
-		editor.item_boxes = box;
+		init_editor();
 	}
-
 
 	Vec3 pos = editor.camera_pos + editor.camera_direction * editor.zoom_level;
 
@@ -82,18 +85,25 @@ void draw_editor(Level *level) {
 	shader_uniform_set(shader_brdf.gl_id, "view", view);
 	shader_uniform_set(shader_water.gl_id, "view", view);
 	shader_uniform_set(shader_editor_highlight.gl_id, "view", view);
+	shader_uniform_set(shader_editor_box.gl_id, "view", view);
 
 	// TODO: don't need to update every frame
 	Mat4 projection = matrix_perspective_projection(editor.fov, editor.aspect, editor.near_plane, editor.far_plane);
 	shader_uniform_set(shader_brdf.gl_id, "projection", projection);
 	shader_uniform_set(shader_water.gl_id, "projection", projection);
 	shader_uniform_set(shader_editor_highlight.gl_id, "projection", projection);
+	shader_uniform_set(shader_editor_box.gl_id, "projection", projection);
 
 	shader_uniform_set(shader_water.gl_id, "time", get_time());
 	shader_uniform_set(shader_brdf.gl_id, "ambient_strength", 0.5f);
 
 	int selected = editor.item_selected;
 	int hovered = editor.item_hovered;
+
+	Mat4 model = matrix_scale(3);
+	shader_uniform_set(shader_editor_box.gl_id, "model", model);
+	//shader_uniform_set(shader_editor_box.gl_id, "highlight_color", Vec4{ 0.00f, 0.99f, 0.01f, 0.9f });
+	shader_draw_call(&box_line_model);
 
 	for (int i = 0; i < editor.item_count; i++) {
 		
@@ -118,8 +128,6 @@ void draw_editor(Level *level) {
 			shader_uniform_set(shader_editor_highlight.gl_id, "model", translation * model_rotation * scale);
 			shader_draw_call(&loaded_models.as_array[i], &shader_editor_highlight);
 		}
-
-
 	}
 
 	shader_uniform_set(shader_brdf.gl_id, "ambient_strength", 0.05f);
@@ -344,9 +352,8 @@ int main() {
 		// draw code
 		//
 
-		clear_it(0.25f, 0.35f, 0.85f, 1.0f);
-
-
+		clear_it(0.25f, 0.25f, 0.25f, 1.0f);
+		
 		if (program_state == Program_State::GAME) {
 			draw_minimap(&floor, &bender);
 			draw_game(&bender, &floor);

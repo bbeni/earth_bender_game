@@ -192,6 +192,8 @@ void make_cube_model(Static_Model* model) {
 	}
 
 	construct_normals(model);
+
+	model->bounding_box = find_bounding_box(&model->mesh);
 }
 
 
@@ -300,6 +302,30 @@ Animated_Model load_anim_bada_file(const char* file_path) {
 	return model;
 }
 
+Box find_bounding_box(Mesh* mesh) {
+
+	// find minimal bounding box
+	float min_x = 0, min_y = 0, min_z = 0;
+	float max_x = 0, max_y = 0, max_z = 0;
+
+	for (int i = 0; i < mesh->count; i++) {
+		Vec3 point = mesh->data[i].position;
+		if (point.x > max_x) max_x = point.x;
+		if (point.y > max_y) max_y = point.y;
+		if (point.z > max_z) max_z = point.z;
+
+		if (point.x < min_x) min_x = point.x;
+		if (point.y < min_y) min_y = point.y;
+		if (point.z < min_z) min_z = point.z;
+	}
+	
+	Box bounding_box;
+
+	bounding_box.min = Vec3{ min_x, min_y, min_z };
+	bounding_box.max = Vec3{ max_x, max_y, max_z };
+
+	return bounding_box;
+}
 
 // read a .bada file generated with the blender script. will abort on error
 Static_Model load_model_bada_file(const char* file_path) {
@@ -311,23 +337,67 @@ Static_Model load_model_bada_file(const char* file_path) {
 
 	model.mesh = animated_model.meshes[0];
 
-	// find minimal bounding box
-	float min_x = 0, min_y = 0, min_z = 0;
-	float max_x = 0, max_y = 0, max_z = 0;
-
-	for (int i = 0; i < model.mesh.count; i++) {
-		Vec3 point = model.mesh.data[i].position;
-		if (point.x > max_x) max_x = point.x;
-		if (point.y > max_y) max_y = point.y;
-		if (point.z > max_z) max_z = point.z;
-
-		if (point.x < min_x) min_x = point.x;
-		if (point.y < min_y) min_y = point.y;
-		if (point.z < min_z) min_z = point.z;
-	}
-
-	model.bounding_box.min = Vec3{ min_x, min_y, min_z };
-	model.bounding_box.max = Vec3{ max_x, max_y, max_z };
+	model.bounding_box = find_bounding_box(&model.mesh);
 
 	return model;
 }
+
+
+void construct_box_lines(Box_Line_Model* box)
+{
+	// top lid
+	box->points[0] = Vec3{ 0.5f, 0.5f, 0.5f };
+	box->points[1] = Vec3{ -0.5f, 0.5f, 0.5f };
+	box->points[2] = Vec3{ -0.5f, 0.5f, 0.5f };
+	box->points[3] = Vec3{ -0.5f, -0.5f, 0.5f };
+	box->points[4] = Vec3{ -0.5f, -0.5f, 0.5f };
+	box->points[5] = Vec3{ 0.5f, -0.5f, 0.5f };
+	box->points[6] = Vec3{ 0.5f, -0.5f, 0.5f };
+	box->points[7] = Vec3{ 0.5f, 0.5f, 0.5f };
+
+	// bottom lid
+	box->points[8] = Vec3{ 0.5f, 0.5f, -0.5f };
+	box->points[9] = Vec3{ -0.5f, 0.5f, -0.5f };
+	box->points[10] = Vec3{ -0.5f, 0.5f, -0.5f };
+	box->points[11] = Vec3{ -0.5f, -0.5f, -0.5f };
+	box->points[12] = Vec3{ -0.5f, -0.5f, -0.5f };
+	box->points[13] = Vec3{ 0.5f, -0.5f, -0.5f };
+	box->points[14] = Vec3{ 0.5f, -0.5f, -0.5f };
+	box->points[15] = Vec3{ 0.5f, 0.5f, -0.5f };
+
+	// vertical connections
+	box->points[16] = Vec3{ 0.5f, 0.5f, 0.5f };
+	box->points[17] = Vec3{ 0.5f, 0.5f, -0.5f };
+	box->points[18] = Vec3{ -0.5f, 0.5f, 0.5f };
+	box->points[19] = Vec3{ -0.5f, 0.5f, -0.5f };
+	box->points[20] = Vec3{ -0.5f, -0.5f, 0.5f };
+	box->points[21] = Vec3{ -0.5f, -0.5f, -0.5f };
+	box->points[22] = Vec3{ 0.5f, -0.5f, 0.5f };
+	box->points[23] = Vec3{ 0.5f, -0.5f, -0.5f };
+}
+
+
+// note this does not use faces or normals
+Static_Model construct_box_lines() {
+	
+	Static_Model model = {0};
+
+	Box_Line_Model line_model;
+	construct_box_lines(&line_model);
+
+	Mesh* m = &model.mesh;
+
+	for (int i = 0; i < 12 *2; i += 1) {
+
+		Vec3 p = line_model.points[i];
+		Vertex_Info vi = {p.x, p.y, p.z, 0, 0, 0, 0, 0};
+		array_add(m, vi);
+	}
+
+	assert(model.mesh.count == 12 * 2);
+
+	model.bounding_box = find_bounding_box(m);
+
+	return model;
+}
+

@@ -29,9 +29,10 @@ extern Immediate_Shader immediate_shader_color;
 
 enum Shader_Flags : uint32_t {
 	NO_SHADER_FLAGS = 0x0,
-	USES_TEXTURE = 0x1,
-	USES_ALPHA = 0x2,
-	WIREFRAME = 0x4,
+	USES_TEXTURE	= 0x1,
+	USES_ALPHA	= 0x2,
+	WIREFRAME	= 0x4,
+	LINES		= 0x8,
 };
 
 typedef struct Material_Shader {
@@ -49,6 +50,7 @@ extern Material_Shader shader_brdf;
 extern Material_Shader shader_water;
 
 extern Material_Shader shader_editor_highlight;
+extern Material_Shader shader_editor_box;
 
 // gets added to the source when you call compile_shader
 static const char* _VERTEX_SHADER_HEADER = "\

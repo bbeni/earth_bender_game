@@ -1,6 +1,8 @@
 #include "shaders.hpp"
 #include "rendering_backend.hpp"
 #include "resource_loading.hpp"
+#define STB_DS_IMPLEMENTATION
+#include "stb_libraries/stb_ds.h"
 
 GLuint make_shader_object(const char* source, int size, GLenum type) {
 
@@ -118,23 +120,50 @@ MULTILINE_STRING(
 )
 };
 
-
 Material_Shader shader_phong;
 Material_Shader shader_brdf;
 Material_Shader shader_water;
 
 Material_Shader shader_editor_highlight;
+Material_Shader shader_editor_box;
 
 // TODO: save loactions in hash_table
+struct Uniform_Entry { 
+	char* key;
+	GLuint value;
+};
+
+Uniform_Entry* uniform_location_map = NULL;
+
+GLuint find_uniform_location(GLuint shader_id, const char* value_name) {
+
+	// @Inconsistent @Bug Heuristic Just to make sure we have probably enough slots in key
+	assert(strlen(value_name) < 64 - 9);
+	char key[64];
+	sprintf_s(key, "%s:%x", value_name, shader_id);
+
+	GLuint location;
+	auto index = shgeti(uniform_location_map, key);
+
+	if (index >= 0) {
+		location = uniform_location_map[index].value;
+	} else {
+		location = glGetUniformLocation(shader_id, value_name);
+		if (location == -1) {
+			printf("Error: OpenGL cannot find uniform location with name '%s' in shader_id %d.\n", value_name, shader_id);
+			exit(1);
+		}
+		shput(uniform_location_map, key, location);
+	}
+
+	return location;
+}
+
 void shader_uniform_set(GLuint shader_id, const char* value_name, const Mat4& mat4) {
 	glUseProgram(shader_id); // temporary
 
-	GLuint location = glGetUniformLocation(shader_id, value_name);
+	GLuint location = find_uniform_location(shader_id, value_name);
 	check_gl_error_and_fail("location - shader_uniform_set(mat4)");
-	if (location == -1) {
-		printf("Error: OpenGL cannot find uniform location with name '%s' in shader_id %d.\n", value_name, shader_id);
-		exit(1);
-	}
 	glUniformMatrix4fv(location, 1, GL_FALSE, &mat4.u11);
 	check_gl_error_and_fail("end - shader_uniform_set(mat4)");
 }
@@ -142,13 +171,8 @@ void shader_uniform_set(GLuint shader_id, const char* value_name, const Mat4& ma
 void shader_uniform_set(GLuint shader_id, const char* value_name, const Vec3& vec3) {
 	glUseProgram(shader_id); // temporary
 
-	GLuint location = glGetUniformLocation(shader_id, value_name);
+	GLuint location = find_uniform_location(shader_id, value_name);
 	check_gl_error_and_fail("location - shader_uniform_set(vec3)");
-	if (location == -1) {
-		printf("Error: OpenGL cannot find uniform location with name '%s' in shader_id %d.\n", value_name, shader_id);
-		exit(1);
-	}
-
 	glUniform3fv(location, 1, &vec3.x);
 	check_gl_error_and_fail("end - shader_uniform_set(vec3)");
 }
@@ -156,13 +180,8 @@ void shader_uniform_set(GLuint shader_id, const char* value_name, const Vec3& ve
 void shader_uniform_set(GLuint shader_id, const char* value_name, const Vec4& vec4) {
 	glUseProgram(shader_id); // temporary
 
-	GLuint location = glGetUniformLocation(shader_id, value_name);
+	GLuint location = find_uniform_location(shader_id, value_name);
 	check_gl_error_and_fail("location - shader_uniform_set(vec4)");
-	if (location == -1) {
-		printf("Error: OpenGL cannot find uniform location with name '%s' in shader_id %d.\n", value_name, shader_id);
-		exit(1);
-	}
-
 	glUniform4fv(location, 1, &vec4.x);
 	check_gl_error_and_fail("end - shader_uniform_set(vec4)");
 }
@@ -170,13 +189,8 @@ void shader_uniform_set(GLuint shader_id, const char* value_name, const Vec4& ve
 void shader_uniform_set(GLuint shader_id, const char* value_name, const float value) {
 	glUseProgram(shader_id); // temporary
 
-	GLuint location = glGetUniformLocation(shader_id, value_name);
+	GLuint location = find_uniform_location(shader_id, value_name);
 	check_gl_error_and_fail("location - shader_uniform_set(float)");
-	if (location == -1) {
-		printf("Error: OpenGL cannot find uniform location with name '%s' in shader_id %d.\n", value_name, shader_id);
-		exit(1);
-	}
-
 	glUniform1f(location, value);
 	check_gl_error_and_fail("end - shader_uniform_set(float)");
 }
@@ -282,13 +296,17 @@ void init_water_uniforms() {
 
 void init_editor_highlight_uniforms() {
 	glUseProgram(shader_editor_highlight.gl_id);
-
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
-
 	init_common_mvp(shader_editor_highlight.gl_id);
 }
 
+void init_editor_box_uniforms() {
+	glUseProgram(shader_editor_box.gl_id);
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
+	init_common_mvp(shader_editor_box.gl_id);
+}
 
 GLuint load_shader_from_path(const char* source_path) {
 
@@ -351,4 +369,13 @@ void backend_create_shaders() {
 	//shader_editor_highlight.uv_location = 2;
 	shader_editor_highlight.flags = (Shader_Flags) (Shader_Flags::USES_ALPHA | Shader_Flags::WIREFRAME);
 	init_editor_highlight_uniforms();
+
+	// editor highlight shader
+	shader_editor_box = { 0 };
+	shader_editor_box.gl_id = load_shader_from_path("shaders/material_brdf.glsl");//editor_bounding_box.glsl");
+	shader_editor_box.position_location = 0;
+	//shader_editor_highlight.normal_location = 1;
+	//shader_editor_highlight.uv_location = 2;
+	shader_editor_box.flags = (Shader_Flags)(Shader_Flags::USES_ALPHA | Shader_Flags::LINES);
+	init_editor_box_uniforms();
 }

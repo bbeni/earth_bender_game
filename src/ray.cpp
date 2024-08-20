@@ -3,6 +3,8 @@
 #include <cassert>
 #include <cfloat>
 
+#define TOLARANCE 0.0000001f
+
 float dist_to_box(Box box, Vec3 point) {
 
 	float dx = fmaxf(box.min.x - point.x, point.x - box.max.x);
@@ -23,6 +25,19 @@ float dist_to_box(Box box, Vec3 point) {
 	return sqrtf(dx * dx + dy + dy + dz * dz);
 }
 
+bool ray_does_hit(Ray ray, Box box, Vec3 *out_position) {
+	float dist = dist_to_box(box, ray.origin);
+	Vec3 possible_point = ray.origin + ray.direction * dist;
+	float dist2 = dist_to_box(box, possible_point);
+	if (dist2 < TOLARANCE) {
+		if (out_position != NULL) {
+			*out_position = possible_point;
+		}
+		return true;
+	}
+	return false;
+}
+
 Ray_Cast_Result ray_cast(Ray ray, Box* boxes, size_t count)
 {
 	auto res = Ray_Cast_Result{ 0 };
@@ -40,8 +55,8 @@ Ray_Cast_Result ray_cast(Ray ray, Box* boxes, size_t count)
 		if (x <= radius) {
 			// we hit the sphere
 			// TODO: check for actual hit and continue
+			
 			// TODO: get actual hit position not center of sphere
-
 			float center_dist = length(center - ray.origin);
 			if (center_dist > min_dist) {
 				// we are further away than the last hit

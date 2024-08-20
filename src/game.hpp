@@ -76,8 +76,9 @@ void draw_stone(Bender* p);
 
 // temporary for testing rendering the cube
 extern Model_Info_For_Shading base_tile_model_info;
-void init_models_for_drawing();
+extern Model_Info_For_Shading box_line_model;
 
+void init_models_for_drawing();
 
 extern union Loaded_Models {
 	struct {

@@ -139,6 +139,8 @@ Vec4 color_from_tile_type(Tile_Type type) {
 Animated_Model_Info_For_Shading player_model_info = { 0 };
 Loaded_Models loaded_models = { 0 };
 
+Model_Info_For_Shading box_line_model = { 0 };
+
 void init_models_for_drawing() {
 
 	if (!init_texture_catalog_disk_and_gpu()) {
@@ -195,7 +197,8 @@ void init_models_for_drawing() {
 	player_model_info.texture_color = &g_texture_catalog.names.earth_bender_color;
 	shader_init_animated_model(&shader_brdf, &player_model_info);
 
-
+	box_line_model.model = g_model_catalog.names.stone_block;//construct_box_lines();
+	shader_init_model(&shader_editor_box, &box_line_model);
 }
 
 void draw_stone(Bender *p) {
@@ -267,6 +270,7 @@ void update_gpu_for_shading(Bender *bender) {
 	shader_uniform_set(shader_brdf.gl_id, "view", view);
 	shader_uniform_set(shader_phong.gl_id, "view", view);
 	shader_uniform_set(shader_water.gl_id, "view", view);
+	shader_uniform_set(shader_editor_box.gl_id, "view", view);
 
 	// Projection
 	float near_plane = 0.01f;
@@ -281,6 +285,7 @@ void update_gpu_for_shading(Bender *bender) {
 	shader_uniform_set(shader_brdf.gl_id, "projection", projection);
 	shader_uniform_set(shader_phong.gl_id, "projection", projection);
 	shader_uniform_set(shader_water.gl_id, "projection", projection);
+	shader_uniform_set(shader_editor_box.gl_id, "projection", projection);
 
 
 	// globals

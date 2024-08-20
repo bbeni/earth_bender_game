@@ -419,7 +419,6 @@ void shader_init_model(Material_Shader* shader, Model_Info_For_Shading *model_in
 	}
 
 	check_gl_error_and_fail("end - shader_init_model locations");
-
 }
 
 
@@ -511,6 +510,11 @@ void shader_draw_call(Model_Info_For_Shading* model_info, Material_Shader* shade
 			glLineWidth(3.0f);
 			//glEnable(GL_LINE_SMOOTH);
 			//glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+		}
+
+		if (shader->flags & Shader_Flags::LINES) {
+			draw_type = GL_TRIANGLES;
+			glLineWidth(5.0f);
 		}
 	}
 
