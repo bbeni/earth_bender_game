@@ -299,6 +299,8 @@ Animated_Model load_anim_bada_file(const char* file_path) {
 	uint32_t magic = *(uint32_t*)f_data;
 	assert(*(uint32_t*)f_data == 0xdabadaba);
 
+	model.bounding_box = find_bounding_box(&model.meshes[0]);
+
 	return model;
 }
 

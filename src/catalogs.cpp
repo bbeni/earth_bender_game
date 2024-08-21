@@ -23,12 +23,12 @@ bool init_texture_catalog_disk_and_gpu() {
 	g_texture_catalog.names.stone_tile_color = set("../resources/textures/stone_tile_color.jpg");
 	g_texture_catalog.names.lava_tile_color = set("../resources/textures/lava_tile_color.jpg");
 	g_texture_catalog.names.water_tile_color = set("../resources/textures/water_tile_color.jpg");
-
 	g_texture_catalog.names.fluffy_monster_color = set("../resources/textures/fluffy_monster_color.jpg");
+	g_texture_catalog.names.plain_red = set("../resources/textures/simple/just_red.png");
 
 	// check if anyone failed
 	for (int i = 0; i < sizeof(g_texture_catalog.as_array) / sizeof(g_texture_catalog.as_array[0]); i++) {
-		if (!g_texture_catalog.as_array[i].loaded_on_gpu) {
+		if (!g_texture_catalog.as_array[i].loaded_on_gpu || !g_texture_catalog.as_array[i].loaded_on_disk) {
 			return false;
 		}
 	}
@@ -40,6 +40,7 @@ Static_Model load_model(const char* file_path) {
 }
 
 bool init_model_catalog_disk() {
+	g_model_catalog.names.marker_icosphere = load_model("../resources/3d_models/marker_icosphere.bada");
 	g_model_catalog.names.stone_block = load_model("../resources/3d_models/stone_block.bada");
 	g_model_catalog.names.stone_tile = load_model("../resources/3d_models/stone_tile.bada");
 	g_model_catalog.names.stone_tile_ramp = load_model("../resources/3d_models/stone_tile_ramp.bada");

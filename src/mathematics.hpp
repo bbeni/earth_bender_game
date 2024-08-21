@@ -66,6 +66,7 @@ struct Mat4 {
 
 	Mat4 operator*(const Mat4& other) const;
 	Vec4 operator*(const Vec4& other) const;
+	Vec3 operator*(const Vec3& other) const;
 };
 
 

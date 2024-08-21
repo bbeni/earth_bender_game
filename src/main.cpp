@@ -72,6 +72,12 @@ void init_editor() {
 	editor.item_boxes = box;
 }
 
+void draw_debug_sphere(Vec3 pos) {
+	// the icosphere
+	Mat4 model = matrix_translation(pos);
+	shader_uniform_set(shader_brdf.gl_id, "model", model);
+	shader_draw_call(&marker_round_model);
+}
 
 void draw_editor(Room* room) {
 	if (!editor.initialized) {
@@ -100,7 +106,8 @@ void draw_editor(Room* room) {
 	int selected = editor.item_selected;
 	int hovered = editor.item_hovered;
 
-	Mat4 model = matrix_scale(3);
+	// TODO: cleanup
+	Mat4 model = matrix_scale(1) * matrix_translation(Vec3{ 0, 0, 0.5f });
 	shader_uniform_set(shader_editor_box.gl_id, "model", model);
 	//shader_uniform_set(shader_editor_box.gl_id, "highlight_color", Vec4{ 0.00f, 0.99f, 0.01f, 0.9f });
 	shader_draw_call(&box_line_model);

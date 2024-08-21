@@ -27,6 +27,7 @@ struct Static_Model {
 struct Animated_Model {
 	size_t count;
 	Mesh meshes[MAX_FRAMES_PER_ANIMATION];
+	Box bounding_box;
 };
 
 enum Ramp_Orientation {

@@ -29,6 +29,7 @@ union Texture_Catalog {
 		Texture lava_tile_color;
 		Texture water_tile_color;
 		Texture fluffy_monster_color;
+		Texture plain_red;
 	} names;
 
 	Texture as_array[sizeof(names)/sizeof(Texture)];
@@ -36,6 +37,7 @@ union Texture_Catalog {
 
 union Model_Catalog {
 	struct {
+		Static_Model marker_icosphere;
 		Static_Model stone_block;
 		Static_Model stone_tile;
 		Static_Model stone_tile_ramp;
@@ -46,8 +48,6 @@ union Model_Catalog {
 
 	Static_Model as_array[sizeof(names) / sizeof(Static_Model)];
 };
-
-
 
 // loading functions
 bool init_texture_catalog_disk_and_gpu();

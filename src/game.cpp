@@ -50,6 +50,7 @@ Room room_alloc(uint32_t d, uint32_t w, uint32_t h) {
 
 void room_free(Room* room) {
 	free(room->tiles);
+	room->tiles = NULL;
 	// @MemoryLeak
 	// TODO: free also decoration tiles
 }
@@ -133,7 +134,9 @@ Vec4 color_from_tile_type(Tile_Type type) {
 Animated_Model_Info_For_Shading player_model_info = { 0 };
 Loaded_Models loaded_models = { 0 };
 
-Model_Info_For_Shading box_line_model = { 0 };
+// models only used by editor
+Model_Info_For_Shading box_line_model =	    { 0 };
+Model_Info_For_Shading marker_round_model = { 0 };
 
 void init_models_for_drawing() {
 
@@ -147,6 +150,21 @@ void init_models_for_drawing() {
 		exit(1);
 	}
 
+
+	// models editor
+	marker_round_model.model = g_model_catalog.names.marker_icosphere;
+	marker_round_model.texture_color = &g_texture_catalog.names.plain_red;
+	shader_init_model(&shader_brdf, &marker_round_model);
+
+	box_line_model.model = g_model_catalog.names.stone_block;//construct_box_lines();
+	shader_init_model(&shader_editor_box, &box_line_model);
+
+	// player
+	player_model_info.model = load_anim_bada_file("../resources/3d_models/earth_bender_anim.bada");
+	player_model_info.texture_color = &g_texture_catalog.names.earth_bender_color;
+	shader_init_animated_model(&shader_brdf, &player_model_info);
+
+	// models tiles
 	loaded_models.stone.model         = g_model_catalog.names.stone_block;
 	loaded_models.stone.texture_color = &g_texture_catalog.names.stone_block_color;
 	shader_init_model(&shader_brdf, &loaded_models.stone);
@@ -186,13 +204,6 @@ void init_models_for_drawing() {
 	loaded_models.bender.model = load_model_bada_file("../resources/3d_models/earth_bender_anim.bada");
 	loaded_models.bender.texture_color = &g_texture_catalog.names.earth_bender_color;
 	shader_init_model(&shader_brdf, &loaded_models.bender);
-
-	player_model_info.model = load_anim_bada_file("../resources/3d_models/earth_bender_anim.bada");
-	player_model_info.texture_color = &g_texture_catalog.names.earth_bender_color;
-	shader_init_animated_model(&shader_brdf, &player_model_info);
-
-	box_line_model.model = g_model_catalog.names.stone_block;//construct_box_lines();
-	shader_init_model(&shader_editor_box, &box_line_model);
 }
 
 void draw_stone(Bender *p) {
@@ -306,15 +317,16 @@ void draw_room(Room* room) {
 
 void draw_player(Bender* p) {
 
+	Vec3 draw_pos = p->pos;
+	Mat4 rotation = matrix_rotation_euler(0.0f, 0.0f, (-p->direction_angle + M_PI));
+	Mat4 scale = matrix_scale(0.8f);
+	Mat4 rot_scale = rotation * scale;
+
+
 	// Model
-	Mat4 model = matrix_translation(Vec3{ p->pos.x, p->pos.y, p->pos.z }) *
-		matrix_rotation_euler(0.0f, 0.0f, (-p->direction_angle + M_PI)) *
-		matrix_scale(0.8f);
+	Mat4 model = matrix_translation(draw_pos) * rot_scale;
 	shader_uniform_set(shader_brdf.gl_id, "model", model);
-
-
 	shader_uniform_set(shader_brdf.gl_id, "ambient_strength", 0.15f);
-
 
 	const float animation_frame_time = 0.025f;
 	int frame_index = (int32_t)(get_time() / animation_frame_time) % player_model_info.model.count;
@@ -324,8 +336,24 @@ void draw_player(Bender* p) {
 	}
 
 	shader_draw_call(&player_model_info, frame_index);
-
 	shader_uniform_set(shader_brdf.gl_id, "ambient_strength", 0.05f);
+
+	// Debug stuff
+	draw_debug_sphere(draw_pos);
+
+	Vec3 max = player_model_info.model.bounding_box.max;
+	Vec3 min = player_model_info.model.bounding_box.min;
+
+	draw_debug_sphere(rot_scale * max + draw_pos);
+	draw_debug_sphere(rot_scale * Vec3{ max.x, max.y, min.z } + draw_pos);
+	draw_debug_sphere(rot_scale * Vec3{ max.x, min.y, max.z } + draw_pos);
+	draw_debug_sphere(rot_scale * Vec3{ min.x, max.y, max.z } + draw_pos);
+
+	draw_debug_sphere(rot_scale * min + draw_pos);
+	draw_debug_sphere(rot_scale * Vec3{ min.x, min.y, max.z } + draw_pos);
+	draw_debug_sphere(rot_scale * Vec3{ min.x, max.y, min.z } + draw_pos);
+	draw_debug_sphere(rot_scale * Vec3{ max.x, min.y, min.z } + draw_pos);
+
 }
 
 void draw_game(Bender* bender, Room* room) {

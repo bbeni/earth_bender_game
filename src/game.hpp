@@ -43,6 +43,13 @@ struct Room {
 	} decoration;
 };
 
+void set_tile(Room* room, uint32_t i, uint32_t j, uint32_t elevation, Tile_Type type, Ramp_Orientation ramp);
+void set_tile(Room* room, uint32_t i, uint32_t j, uint32_t elevation, Tile_Type type);
+void clear_tile(Room* room, uint32_t i, uint32_t j, uint32_t elevation);
+void print_room(Room* room);
+Room room_alloc(uint32_t d, uint32_t w, uint32_t h);
+void room_free(Room* room);
+
 enum class Action {
 	IDLE,
 	TURNING,
@@ -81,8 +88,12 @@ void draw_stone(Bender* p);
 // temporary for testing rendering the cube
 extern Model_Info_For_Shading base_tile_model_info;
 extern Model_Info_For_Shading box_line_model;
+extern Model_Info_For_Shading marker_round_model;
 
 void init_models_for_drawing();
+
+void draw_debug_sphere(Vec3 pos);
+
 
 extern union Loaded_Models {
 	struct {

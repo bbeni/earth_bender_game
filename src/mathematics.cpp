@@ -265,7 +265,7 @@ Mat4 Mat4::operator*(const Mat4& other) const {
 }
 
 Vec4 Mat4::operator*(const Vec4& other) const {
-	Vec4 v = { 0 };
+	Vec4 v;
 
 	v.x = u11 * other.x + u12 * other.y + u13 * other.z + u14 * other.w;
 	v.y = u21 * other.x + u22 * other.y + u23 * other.z + u24 * other.w;
@@ -273,6 +273,18 @@ Vec4 Mat4::operator*(const Vec4& other) const {
 	v.w = u41 * other.x + u42 * other.y + u43 * other.z + u44 * other.w;
 
 	return v;
+}
+
+Vec3 Mat4::operator*(const Vec3& other) const {
+	Vec4 v;
+
+	v.x = other.x;
+	v.y = other.y;
+	v.z = other.z;
+	v.w = 1;
+
+	v = *this * v;
+	return Vec3{v.x, v.y, v.z};
 }
 
 
