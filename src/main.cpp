@@ -131,7 +131,7 @@ void draw_editor(Level *level) {
 	}
 
 	shader_uniform_set(shader_brdf.gl_id, "ambient_strength", 0.05f);
-	draw_floor(level);
+	draw_level(level);
 }
 
 // find the hovered block index that is placed on the side
@@ -253,13 +253,19 @@ int main() {
 
 	float shake_timer = 0.0f;
 
-	Level floor = {0};
-	generate_floor(&floor);
+	Level floor = { 0 };
+	Room room = { 0 };
+	room.depth = 40;
+	room.width = 40;
+	room.height = 20;
+
+
+	generate_level(&floor, &room);
 
 	Vec4 color = { 1.0, 0.5, 0.0, 1.0 };
 
 	init_models_for_drawing();
-	draw_floor(&floor);
+	draw_level(&floor);
 
 	Bender bender = { 0 };
 	bender.pos = Vec3{1.0f, 1.0f, 0.5f };

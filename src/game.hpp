@@ -21,7 +21,7 @@ struct Top_Tile {
 };
 
 // for now they are just aestetically here
-struct Lower_Tile {
+struct Decoration_Tile {
 	int16_t   height;
 	int16_t   x, y;
 	Tile_Type type;
@@ -34,8 +34,30 @@ struct Lower_Tile {
 
 struct Level {
 	Top_Tile   top_tiles[FLOOR_D][FLOOR_W];
-	Lower_Tile lower_tiles[MAX_LOWER_TILES];
+	Decoration_Tile lower_tiles[MAX_LOWER_TILES];
 	size_t     n_lower_tiles;
+};
+
+struct Floor_Tile {
+	Tile_Type	 type;
+	Ramp_Orientation ramp_direction;
+};
+
+// i depth, j width, k height direction
+#define TILE_AT(room, i, j, k) (room)->tiles[(i)*(room)->width*(room)->height + (j)*(room)->height + k]
+
+struct Room {
+	size_t depth;
+	size_t width;
+	size_t height;
+
+	Floor_Tile* tiles;
+
+	struct {
+		Decoration_Tile* data;
+		size_t count;
+		size_t capacity;
+	} decoration;
 };
 
 enum class Action {
@@ -62,14 +84,14 @@ struct Bender {
 };
 
 
-void generate_floor(Level* floor);
+void generate_level(Level* floor, Room* room);
 
 void update_player(Bender* p, Level* floor);
 
 void draw_game(Bender* bender, Level* level);
 
 void draw_minimap(Level* floor, Bender* p);
-void draw_floor(Level* floor);
+void draw_level(Level* floor);
 void draw_player(Bender* p);
 void draw_stone(Bender* p);
 

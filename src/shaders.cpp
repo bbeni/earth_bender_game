@@ -137,6 +137,7 @@ Uniform_Entry* uniform_location_map = NULL;
 
 GLuint find_uniform_location(GLuint shader_id, const char* value_name) {
 
+	// TODO: this is actually slower than the naive implementation without hash map
 	// @Inconsistent @Bug Heuristic Just to make sure we have probably enough slots in key
 	assert(strlen(value_name) < 64 - 9);
 	char key[64];

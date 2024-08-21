@@ -3,7 +3,7 @@
 #include "shaders.hpp"
 
 
-void add_lower_tile(Level* level, Lower_Tile tile) {
+void add_lower_tile(Level* level, Decoration_Tile tile) {
 	if (level->n_lower_tiles >= sizeof(level->lower_tiles) / sizeof(level->lower_tiles[0])) {
 		printf("Error: failed to add another Lower_Tile in add_lower_tile() %u exeeded.\n", sizeof(level->lower_tiles) / sizeof(level->lower_tiles[0]));
 		return;
@@ -13,9 +13,53 @@ void add_lower_tile(Level* level, Lower_Tile tile) {
 	level->lower_tiles[i] = tile;
 }
 
-void generate_floor(Level* level) {
-	for (int i = 0; i < FLOOR_W; i++) {
-		for (int j = 0; j < FLOOR_D; j++) {
+void set_tile(Room* room, uint32_t i, uint32_t j, uint32_t elevation, Tile_Type type, Ramp_Orientation ramp) {
+	assert(i < room->depth);
+	assert(j < room->width);
+	assert(elevation < room->height);
+
+	TILE_AT(room, i, j, elevation).type = type;
+	TILE_AT(room, i, j, elevation).ramp_direction = ramp;
+}
+
+void set_tile(Room* room, uint32_t i, uint32_t j, uint32_t elevation, Tile_Type type) {
+	set_tile(room, i, j, elevation, type, Ramp_Orientation::FLAT);
+}
+
+
+void clear_tile(Room* room, uint32_t i, uint32_t j, uint32_t elevation) {
+	set_tile(room, i, j, elevation, Tile_Type::AIR, Ramp_Orientation::FLAT);
+}
+
+void set_decoration_tile() {
+
+}
+
+Room room_alloc(uint32_t d, uint32_t w, uint32_t h) {
+	Room r;
+	r.depth = d;
+	r.width = w;
+	r.height = h;
+	r.tiles = (Floor_Tile*)malloc(sizeof(*r.tiles) * d * w * h);
+	memset(r.tiles, 0, sizeof(*r.tiles) * d * w * h);
+	assert(r.tiles != NULL);
+	return r;
+}
+
+void room_free(Room* room) {
+	free(room->tiles);
+	// @MemoryLeak
+	// TODO: free also decoration tiles
+}
+
+void generate_level(Level* level, Room* room) {
+
+	if (room->tiles == NULL) {
+		*room = room_alloc(room->depth, room->width, room->height);
+	}
+	
+	for (int i = 0; i < FLOOR_D; i++) {
+		for (int j = 0; j < FLOOR_W; j++) {
 
 			Top_Tile* t = &level->top_tiles[i][j];
 
@@ -29,22 +73,25 @@ void generate_floor(Level* level) {
 			if ((i > 20) && (j > 5) && (i < 25) && (j < 13)) {
 				t->type = Tile_Type::LAVA;
 				t->block_walking = true;
+				set_tile(room, i, j, 0, Tile_Type::LAVA);
 				continue;
-
 			}
 
 			if ((j > 23) && (i > 5) && (j < 29) && (i < 13)) {
 				t->type = Tile_Type::EARTH;
 				t->height = 5;
+				set_tile(room, i, j, 5, Tile_Type::EARTH);
 
 				// add a lava tile below
-				Lower_Tile lt = { 0 };
+				Decoration_Tile lt = { 0 };
 				lt.type = Tile_Type::LAVA;
 				lt.height = -1;
 				lt.x = i;
-				lt.y = j;
-				
+				lt.y = j;				
 				add_lower_tile(level, lt);
+								
+				set_tile(room, i, j, 0, Tile_Type::EARTH);
+
 				continue;
 			}
 
@@ -53,13 +100,18 @@ void generate_floor(Level* level) {
 				t->ramp_direction = Ramp_Orientation::EAST;
 				t->height = i;
 
+				set_tile(room, i, j, i, Tile_Type::EARTH, Ramp_Orientation::EAST);
+
+
 				// add a lava tile below
-				Lower_Tile lt = { 0 };
+				Decoration_Tile lt = { 0 };
 				lt.type = Tile_Type::LAVA;
 				lt.height = 0;
 				lt.x = i;
 				lt.y = j;
 				add_lower_tile(level, lt);
+
+				set_tile(room, i, j, 0, Tile_Type::LAVA);
 
 				continue;
 			}
@@ -69,34 +121,47 @@ void generate_floor(Level* level) {
 				if (j == 10) {
 					t->type = Tile_Type::STONE;
 					t->height = 3;
+					set_tile(room, i, j, 3, Tile_Type::STONE);
 
 					// add a water tile below
-					Lower_Tile lt = { 0 };
+					Decoration_Tile lt = { 0 };
 					lt.type = Tile_Type::WATER;
 					lt.height = 0;
 					lt.x = i;
 					lt.y = j;
 					add_lower_tile(level, lt);
 
+					set_tile(room, i, j, 0, Tile_Type::WATER);
+
 				} else {
 					t->type = Tile_Type::WATER;
 					t->block_walking = true;
 					t->height = 0;
+
+					set_tile(room, i, j, 0, Tile_Type::WATER);
 				}
 			} else {
 				if (j == 9 || j == 10 || j == 11) {
 					t->type = Tile_Type::SAND;
 					t->height = 1;
+					set_tile(room, i, j, 1, Tile_Type::SAND);
+
 				} else if (j == 12) {
 					t->type = Tile_Type::STONE;
 					t->height = 1;
 					t->ramp_direction = Ramp_Orientation::SOUTH;
+
+					set_tile(room, i, j, 1, Tile_Type::STONE, Ramp_Orientation::SOUTH);
+
 				} else if (j == 8) {
 					t->type = Tile_Type::STONE;
 					t->height = 1;
 					t->ramp_direction = Ramp_Orientation::NORTH;
+					set_tile(room, i, j, 1, Tile_Type::STONE, Ramp_Orientation::NORTH);
+
 				} else {
 					t->type = Tile_Type::GRASS;
+					set_tile(room, i, j, 0, Tile_Type::GRASS);
 				}
 			}
 		}
@@ -109,7 +174,6 @@ void generate_floor(Level* level) {
 	level->top_tiles[19][10].ramp_direction = Ramp_Orientation::WEST;
 	level->top_tiles[19][10].height += 1;
 	level->top_tiles[18][10].ramp_direction = Ramp_Orientation::WEST;
-
 
 }
 
@@ -293,7 +357,7 @@ void update_gpu_for_shading(Bender *bender) {
 
 }
 
-void draw_floor(Level* floor) {
+void draw_level(Level* floor) {
 
 	Mat4 translation = matrix_translation(Vec3{ 2.0f, 1.0f, 5.0f });
 
@@ -306,7 +370,7 @@ void draw_floor(Level* floor) {
 	}
 
 	for (int i = 0; i < floor->n_lower_tiles; i++) {
-		Lower_Tile tile = floor->lower_tiles[i];
+		Decoration_Tile tile = floor->lower_tiles[i];
 		float elevation = 0.5f * tile.height;
 		draw_tile(tile.type, Ramp_Orientation::FLAT, elevation, tile.x, tile.y);
 	}
@@ -341,7 +405,7 @@ void draw_game(Bender* bender, Level* level) {
 	update_gpu_for_shading(bender);
 
 	draw_player(bender);
-	draw_floor(level);
+	draw_level(level);
 	draw_stone(bender);
 }
 
