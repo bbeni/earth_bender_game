@@ -13,13 +13,6 @@ enum class Tile_Type {
 	WATER,
 };
 
-struct Top_Tile {
-	int16_t   height;
-	Tile_Type type;
-	bool      block_walking;
-	Ramp_Orientation ramp_direction;
-};
-
 // for now they are just aestetically here
 struct Decoration_Tile {
 	int16_t   height;
@@ -27,20 +20,10 @@ struct Decoration_Tile {
 	Tile_Type type;
 };
 
-#define FLOOR_W 40
-#define FLOOR_D 40
-
-#define MAX_LOWER_TILES 40 * 40 * 2
-
-struct Level {
-	Top_Tile   top_tiles[FLOOR_D][FLOOR_W];
-	Decoration_Tile lower_tiles[MAX_LOWER_TILES];
-	size_t     n_lower_tiles;
-};
-
 struct Floor_Tile {
 	Tile_Type	 type;
 	Ramp_Orientation ramp_direction;
+	bool		 allow_walking;
 };
 
 // i depth, j width, k height direction
@@ -84,13 +67,13 @@ struct Bender {
 };
 
 
-void generate_level(Level* floor, Room* room);
-void update_player(Bender* p, Level* floor);
+void generate_room_example(Room* room);
+void update_player(Bender* p, Room* rooms);
 
 void draw_game(Bender* bender, Room* room);
 
 void draw_minimap(Room* room, Bender* p);
-void draw_level(Room* room);
+void draw_room(Room* room);
 void draw_player(Bender* p);
 void draw_stone(Bender* p);
 

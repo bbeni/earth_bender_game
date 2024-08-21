@@ -2,17 +2,6 @@
 #include "rendering_backend.hpp"
 #include "shaders.hpp"
 
-
-void add_lower_tile(Level* level, Decoration_Tile tile) {
-	if (level->n_lower_tiles >= sizeof(level->lower_tiles) / sizeof(level->lower_tiles[0])) {
-		printf("Error: failed to add another Lower_Tile in add_lower_tile() %u exeeded.\n", sizeof(level->lower_tiles) / sizeof(level->lower_tiles[0]));
-		return;
-	}
-
-	size_t i = level->n_lower_tiles++;
-	level->lower_tiles[i] = tile;
-}
-
 void set_tile(Room* room, uint32_t i, uint32_t j, uint32_t elevation, Tile_Type type, Ramp_Orientation ramp) {
 	assert(i < room->depth);
 	assert(j < room->width);
@@ -20,6 +9,7 @@ void set_tile(Room* room, uint32_t i, uint32_t j, uint32_t elevation, Tile_Type 
 
 	TILE_AT(room, i, j, elevation).type = type;
 	TILE_AT(room, i, j, elevation).ramp_direction = ramp;
+	TILE_AT(room, i, j, elevation).allow_walking = true;
 }
 
 void set_tile(Room* room, uint32_t i, uint32_t j, uint32_t elevation, Tile_Type type) {
@@ -35,14 +25,26 @@ void set_decoration_tile() {
 
 }
 
+void print_room(Room* room) {
+	for (int i = 0; i < room->depth; i++) {
+		for (int j = 0; j < room->width; j++) {
+			printf("Column:%d,%d: ", i, j);
+			for (int k = room->height - 1; k >= 0; k--) {
+				printf("%d-", TILE_AT(room, i, j, k).type);
+			}
+			printf("\n");
+		}
+	}
+}
+
 Room room_alloc(uint32_t d, uint32_t w, uint32_t h) {
 	Room r;
 	r.depth = d;
 	r.width = w;
 	r.height = h;
-	r.tiles = (Floor_Tile*)malloc(sizeof(*r.tiles) * d * w * h);
-	memset(r.tiles, 0, sizeof(*r.tiles) * d * w * h);
+	r.tiles = (Floor_Tile*)malloc(sizeof(Floor_Tile) * d * w * h);
 	assert(r.tiles != NULL);
+	memset(r.tiles, 0, sizeof(Floor_Tile) * d * w * h);
 	return r;
 }
 
@@ -52,135 +54,57 @@ void room_free(Room* room) {
 	// TODO: free also decoration tiles
 }
 
-void generate_level(Level* level, Room* room) {
+void generate_room_example(Room* room) {
 
 	if (room->tiles == NULL) {
 		*room = room_alloc(room->depth, room->width, room->height);
 	}
 	
-	for (int i = 0; i < FLOOR_D; i++) {
-		for (int j = 0; j < FLOOR_W; j++) {
+	for (int i = 0; i < room->depth; i++) {
+		for (int j = 0; j < room->width; j++) {
+			if (i*i + j*j > 1800)	continue; // circle
 
-			Top_Tile* t = &level->top_tiles[i][j];
-
-			if (i*i + j*j > 1800) {
-				t->type = Tile_Type::AIR;
-				t->block_walking = true;
-				continue;
-			}
-
-			// hole
+			// lava hole
 			if ((i > 20) && (j > 5) && (i < 25) && (j < 13)) {
-				t->type = Tile_Type::LAVA;
-				t->block_walking = true;
 				set_tile(room, i, j, 0, Tile_Type::LAVA);
 				continue;
 			}
 
 			if ((j > 23) && (i > 5) && (j < 29) && (i < 13)) {
-				t->type = Tile_Type::EARTH;
-				t->height = 5;
 				set_tile(room, i, j, 5, Tile_Type::EARTH);
-
 				// add a lava tile below
-				Decoration_Tile lt = { 0 };
-				lt.type = Tile_Type::LAVA;
-				lt.height = -1;
-				lt.x = i;
-				lt.y = j;				
-				add_lower_tile(level, lt);
-								
 				set_tile(room, i, j, 0, Tile_Type::LAVA);
-
 				continue;
 			}
 
 			if ((i >= 1) && (i <= 6) && (j == 25)) {
-				t->type = Tile_Type::EARTH;
-				t->ramp_direction = Ramp_Orientation::EAST;
-				t->height = i;
-
 				set_tile(room, i, j, i, Tile_Type::EARTH, Ramp_Orientation::EAST);
-
-
 				// add a lava tile below
-				Decoration_Tile lt = { 0 };
-				lt.type = Tile_Type::LAVA;
-				lt.height = 0;
-				lt.x = i;
-				lt.y = j;
-				add_lower_tile(level, lt);
-
 				set_tile(room, i, j, 0, Tile_Type::LAVA);
-
 				continue;
 			}
 
 			if ((i > 3 && i < 19) && (j > 3 && j < 19)) {
-
-				if (j == 10) {
-					t->type = Tile_Type::STONE;
-					t->height = 3;
-					set_tile(room, i, j, 3, Tile_Type::STONE);
-
-					// add a water tile below
-					Decoration_Tile lt = { 0 };
-					lt.type = Tile_Type::WATER;
-					lt.height = 0;
-					lt.x = i;
-					lt.y = j;
-					add_lower_tile(level, lt);
-
-					set_tile(room, i, j, 0, Tile_Type::WATER);
-
-				} else {
-					t->type = Tile_Type::WATER;
-					t->block_walking = true;
-					t->height = 0;
-
-					set_tile(room, i, j, 0, Tile_Type::WATER);
-				}
+				if (j == 10)	set_tile(room, i, j, 3, Tile_Type::STONE);
+				set_tile(room, i, j, 0, Tile_Type::WATER);// add a water tile below
 			} else {
 				if (j == 9 || j == 10 || j == 11) {
-					t->type = Tile_Type::SAND;
-					t->height = 1;
 					set_tile(room, i, j, 1, Tile_Type::SAND);
-
 				} else if (j == 12) {
-					t->type = Tile_Type::STONE;
-					t->height = 1;
-					t->ramp_direction = Ramp_Orientation::SOUTH;
-
 					set_tile(room, i, j, 1, Tile_Type::STONE, Ramp_Orientation::SOUTH);
-
 				} else if (j == 8) {
-					t->type = Tile_Type::STONE;
-					t->height = 1;
-					t->ramp_direction = Ramp_Orientation::NORTH;
 					set_tile(room, i, j, 1, Tile_Type::STONE, Ramp_Orientation::NORTH);
-
 				} else {
-					t->type = Tile_Type::GRASS;
 					set_tile(room, i, j, 0, Tile_Type::GRASS);
 				}
 			}
 		}
 	}
 
-	level->top_tiles[3][10].ramp_direction = Ramp_Orientation::EAST;
-	level->top_tiles[3][10].height += 1;
 	set_tile(room, 3, 10, 2, Tile_Type::STONE, Ramp_Orientation::EAST);
-
-	level->top_tiles[4][10].ramp_direction = Ramp_Orientation::EAST;
 	set_tile(room, 4, 10, 3, Tile_Type::STONE, Ramp_Orientation::EAST);
-
-	level->top_tiles[19][10].ramp_direction = Ramp_Orientation::WEST;
-	level->top_tiles[19][10].height += 1;
 	set_tile(room, 19, 10, 2, Tile_Type::STONE, Ramp_Orientation::WEST);
-
-	level->top_tiles[18][10].ramp_direction = Ramp_Orientation::WEST;
 	set_tile(room, 18, 10, 3, Tile_Type::STONE, Ramp_Orientation::WEST);
-
 }
 
 
@@ -363,7 +287,7 @@ void update_gpu_for_shading(Bender *bender) {
 
 }
 
-void draw_level(Room* room) {
+void draw_room(Room* room) {
 
 	Mat4 translation = matrix_translation(Vec3{ 2.0f, 1.0f, 5.0f });
 
@@ -409,19 +333,29 @@ void draw_game(Bender* bender, Room* room) {
 	update_gpu_for_shading(bender);
 
 	draw_player(bender);
-	draw_level(room);
+	draw_room(room);
 	draw_stone(bender);
 }
 
+int top_non_air_elevation(Room* room, uint32_t i, uint32_t j) {
+	
+	Tile_Type top_type;
+	int k = room->height - 1;
+	for (; k >= 0; k--) {
+		top_type = TILE_AT(room, i, j, k).type;
+		if (top_type != Tile_Type::AIR) {
+			return k;
+		}
+	}
+	return -1;
+}
 
-
-void update_player(Bender* b, Level* floor) {
+void update_player(Bender* b, Room* room) {
 
 	float frame_time = (float)get_frame_time();
 
 	float angle = b->direction_angle;
 	float target_angle = b->target_direction_angle - 0.001f;
-
 
 	if (fabs(angle - target_angle) > 0.00001f) {
 		b->current_action = Action::TURNING;
@@ -432,30 +366,35 @@ void update_player(Bender* b, Level* floor) {
 
 	b->velocity = direction * b->walk_speed;
 
-
 	if (b->current_action == Action::WALKING) {
 		Vec3 desired_pos = b->pos + b->velocity * frame_time;
 
 		int current_i = (int)floorf(b->pos.x + 0.5f);
 		int current_j = (int)floorf(b->pos.y + 0.5f);
+		int current_elevation = -1;
 
 		int desired_i = (int)floorf(desired_pos.x + 0.5f);
 		int desired_j = (int)floorf(desired_pos.y + 0.5f);
 
-		Top_Tile* desired_tile = NULL;
-		Top_Tile* current_tile = NULL;
+		Floor_Tile* desired_tile = NULL;
+		Floor_Tile* current_tile = NULL;
 		{
-			if ((desired_i >= 0 && desired_i < FLOOR_W) && (desired_j >= 0 && desired_j < FLOOR_D)) {
-				desired_tile = &floor->top_tiles[desired_i][desired_j];
+			if ((desired_i >= 0 && desired_i < room->width) && (desired_j >= 0 && desired_j < room->depth)) {
+				int elevation = top_non_air_elevation(room, desired_i, desired_j);
+				if (elevation != -1)
+					desired_tile = &TILE_AT(room, desired_i, desired_j, elevation);
 			}
 
-			if ((current_i >= 0 && current_i < FLOOR_W) && (current_j >= 0 && current_j < FLOOR_D)) {
-				current_tile = &floor->top_tiles[current_i][current_j];
+			if ((current_i >= 0 && current_i < room->width) && (current_j >= 0 && current_j < room->depth)) {
+				current_elevation = top_non_air_elevation(room, current_i, current_j);
+				current_tile = &TILE_AT(room, current_i, current_j, current_elevation);
 			}
 		}
 
+		assert(current_elevation != -1);
+
 		// snap the x or y cordinate to previous tiles
-		if (current_tile != NULL && (desired_tile == NULL || desired_tile->block_walking)) {
+		if (current_tile != NULL && (desired_tile == NULL) || !desired_tile->allow_walking) {
 			int d_i = desired_i - current_i;
 			int d_j = desired_j - current_j;
 
@@ -467,12 +406,12 @@ void update_player(Bender* b, Level* floor) {
 				desired_pos.y = b->pos.y;
 			}
 
-			desired_pos.z = current_tile->height * 0.5f + 0.5f;
+			desired_pos.z = current_elevation * 0.5f + 0.5f;
 		}
 		
-		if (desired_tile != NULL && !desired_tile->block_walking) {
+		if (desired_tile != NULL) {
 
-			desired_pos.z = desired_tile->height * 0.5f + 0.5f;
+			desired_pos.z = current_elevation * 0.5f + 0.5f;
 
 			if (desired_tile->ramp_direction != Ramp_Orientation::FLAT) {
 
@@ -522,15 +461,18 @@ void draw_minimap(Room* room, Bender* p) {
 
 	Vec2 pos;
 
-	for (int i = 0; i < FLOOR_W; i++) {
-		for (int j = 0; j < FLOOR_D; j++) {
+	uint32_t n_width = room->width;
+	uint32_t n_depth = room->depth;
+
+	for (int i = 0; i < n_width; i++) {
+		for (int j = 0; j < n_depth; j++) {
 
 			pos = { x0 + offset + (width + pad_x) * i + 0.5f * width, y0 + offset + (height + pad_y) * j + 0.5f * height };
 
 			//immediate_quad(pos, size, color_from_tile_type(floor->tiles[i][j].type));
 
 			Tile_Type top_type = Tile_Type::AIR;
-			for (int k = 0; k < room->height; k++) {
+			for (int k = room->height - 1; k >= 0; k--) {
 				top_type = TILE_AT(room, i, j, k).type;
 				if (top_type != Tile_Type::AIR) {
 					break;
@@ -561,9 +503,8 @@ void draw_minimap(Room* room, Bender* p) {
 			Vec2 p4 = { pos.x - width * 0.5f, pos.y + height * 0.5f };
 
 			immediate_quad(p1, p2, p3, p4, c1, c1, c2, c3);
-
 		}
 	}
-	immediate_quad(offset, offset, (width + pad_x) * FLOOR_W - pad_x + 2 * x0, (height + pad_y) * FLOOR_D - pad_y + 2 * y0, Vec4{ 0, 0, 0, 1 });
 
+	immediate_quad(offset, offset, (width + pad_x) * n_width - pad_x + 2 * x0, (height + pad_y) * n_depth - pad_y + 2 * y0, Vec4{ 0, 0, 0, 1 });
 }

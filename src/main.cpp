@@ -73,7 +73,7 @@ void init_editor() {
 }
 
 
-void draw_editor(Level *level, Room* room) {
+void draw_editor(Room* room) {
 	if (!editor.initialized) {
 		editor.initialized = true;
 		init_editor();
@@ -131,7 +131,7 @@ void draw_editor(Level *level, Room* room) {
 	}
 
 	shader_uniform_set(shader_brdf.gl_id, "ambient_strength", 0.05f);
-	draw_level(room);
+	draw_room(room);
 }
 
 // find the hovered block index that is placed on the side
@@ -253,19 +253,18 @@ int main() {
 
 	float shake_timer = 0.0f;
 
-	Level floor = { 0 };
 	Room room = { 0 };
 	room.depth = 40;
 	room.width = 40;
 	room.height = 20;
 
 
-	generate_level(&floor, &room);
+	generate_room_example(&room);
 
 	Vec4 color = { 1.0, 0.5, 0.0, 1.0 };
 
 	init_models_for_drawing();
-	draw_level(&room);
+	draw_room(&room);
 
 	Bender bender = { 0 };
 	bender.pos = Vec3{1.0f, 1.0f, 0.5f };
@@ -350,7 +349,7 @@ int main() {
 		// update code
 		//
 
-		update_player(&bender, &floor);
+		update_player(&bender, &room);
 		//printf("action %d, pos (%f %f), target_angle %f, angle %f\n", player.current_action, player.pos.x, player.pos.x, player.target_direction_angle, player.direction_angle);
 		
 		
@@ -402,7 +401,7 @@ int main() {
 		}
 
 		if (program_state == Program_State::EDITOR) {
-			draw_editor(&floor, &room);
+			draw_editor(&room);
 		}
 
 		swap_buffers(&window_info);

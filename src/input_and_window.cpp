@@ -351,7 +351,7 @@ LRESULT CALLBACK my_window_proc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 	case WM_SETFOCUS:
 	case WM_KILLFOCUS:
 	default:
-		printf("Unhandled: 0x%x\n", uMsg);
+		//printf("Unhandled: 0x%x\n", uMsg);
 		return DefWindowProcW(hwnd, uMsg, wParam, lParam);
 	}
 
