@@ -4,7 +4,7 @@
 #include "rendering_backend.hpp"
 
 enum class Tile_Type {
-	AIR,
+	AIR = 0,
 	GRASS,
 	EARTH,
 	SAND,
@@ -85,13 +85,12 @@ struct Bender {
 
 
 void generate_level(Level* floor, Room* room);
-
 void update_player(Bender* p, Level* floor);
 
-void draw_game(Bender* bender, Level* level);
+void draw_game(Bender* bender, Room* room);
 
-void draw_minimap(Level* floor, Bender* p);
-void draw_level(Level* floor);
+void draw_minimap(Room* room, Bender* p);
+void draw_level(Room* room);
 void draw_player(Bender* p);
 void draw_stone(Bender* p);
 

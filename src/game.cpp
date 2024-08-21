@@ -90,7 +90,7 @@ void generate_level(Level* level, Room* room) {
 				lt.y = j;				
 				add_lower_tile(level, lt);
 								
-				set_tile(room, i, j, 0, Tile_Type::EARTH);
+				set_tile(room, i, j, 0, Tile_Type::LAVA);
 
 				continue;
 			}
@@ -169,11 +169,17 @@ void generate_level(Level* level, Room* room) {
 
 	level->top_tiles[3][10].ramp_direction = Ramp_Orientation::EAST;
 	level->top_tiles[3][10].height += 1;
+	set_tile(room, 3, 10, 2, Tile_Type::STONE, Ramp_Orientation::EAST);
+
 	level->top_tiles[4][10].ramp_direction = Ramp_Orientation::EAST;
+	set_tile(room, 4, 10, 3, Tile_Type::STONE, Ramp_Orientation::EAST);
 
 	level->top_tiles[19][10].ramp_direction = Ramp_Orientation::WEST;
 	level->top_tiles[19][10].height += 1;
+	set_tile(room, 19, 10, 2, Tile_Type::STONE, Ramp_Orientation::WEST);
+
 	level->top_tiles[18][10].ramp_direction = Ramp_Orientation::WEST;
+	set_tile(room, 18, 10, 3, Tile_Type::STONE, Ramp_Orientation::WEST);
 
 }
 
@@ -357,22 +363,20 @@ void update_gpu_for_shading(Bender *bender) {
 
 }
 
-void draw_level(Level* floor) {
+void draw_level(Room* room) {
 
 	Mat4 translation = matrix_translation(Vec3{ 2.0f, 1.0f, 5.0f });
 
-	for (int i = 0; i < FLOOR_W; i++) {
-		for (int j = 0; j < FLOOR_D; j++) {
-			Top_Tile tile = floor->top_tiles[i][j];
-			float elevation = 0.5f * tile.height;
-			draw_tile(tile.type, tile.ramp_direction, elevation, i, j);
+	for (int i = 0; i < room->depth; i++) {
+		for (int j = 0; j < room->width; j++) {
+			for (int k = 0; k < room->height; k++) {
+				Floor_Tile tile = TILE_AT(room, i, j, k);
+				if (tile.type != Tile_Type::AIR) {
+					float elevation = 0.5f * k;
+					draw_tile(tile.type, tile.ramp_direction, elevation, i, j);
+				}
+			}
 		}
-	}
-
-	for (int i = 0; i < floor->n_lower_tiles; i++) {
-		Decoration_Tile tile = floor->lower_tiles[i];
-		float elevation = 0.5f * tile.height;
-		draw_tile(tile.type, Ramp_Orientation::FLAT, elevation, tile.x, tile.y);
 	}
 }
 
@@ -400,12 +404,12 @@ void draw_player(Bender* p) {
 	shader_uniform_set(shader_brdf.gl_id, "ambient_strength", 0.05f);
 }
 
-void draw_game(Bender* bender, Level* level) {
+void draw_game(Bender* bender, Room* room) {
 
 	update_gpu_for_shading(bender);
 
 	draw_player(bender);
-	draw_level(level);
+	draw_level(room);
 	draw_stone(bender);
 }
 
@@ -499,9 +503,7 @@ void update_player(Bender* b, Level* floor) {
 	}
 }
 
-
-
-void draw_minimap(Level* floor, Bender* p) {
+void draw_minimap(Room* room, Bender* p) {
 
 	float offset = -1.0f; // rendering left bottom corner is (-1, -1)
 
@@ -527,7 +529,16 @@ void draw_minimap(Level* floor, Bender* p) {
 
 			//immediate_quad(pos, size, color_from_tile_type(floor->tiles[i][j].type));
 
-			Vec4 c1 = color_from_tile_type(floor->top_tiles[i][j].type);
+			Tile_Type top_type = Tile_Type::AIR;
+			for (int k = 0; k < room->height; k++) {
+				top_type = TILE_AT(room, i, j, k).type;
+				if (top_type != Tile_Type::AIR) {
+					break;
+				}
+			}
+
+			Vec4 c1 = color_from_tile_type(top_type);
+
 			Vec4 c2 = c1;
 			c2.x -= 0.4f;
 			c2.y -= 0.4f;
