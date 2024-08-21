@@ -26,6 +26,7 @@ struct Floor_Tile {
 	bool		 allow_walking;
 };
 
+
 // i depth, j width, k height direction
 #define TILE_AT(room, i, j, k) (room)->tiles[(i)*(room)->width*(room)->height + (j)*(room)->height + k]
 
@@ -37,10 +38,11 @@ struct Room {
 	Floor_Tile* tiles;
 
 	struct {
-		Decoration_Tile* data;
+		Box*   data;
 		size_t count;
 		size_t capacity;
-	} decoration;
+	} tile_boxes;
+
 };
 
 void set_tile(Room* room, uint32_t i, uint32_t j, uint32_t elevation, Tile_Type type, Ramp_Orientation ramp);
@@ -74,7 +76,7 @@ struct Bender {
 };
 
 
-void generate_room_example(Room* room);
+Room generate_room_example(uint32_t depth, uint32_t width, uint32_t height);
 void update_player(Bender* p, Room* rooms);
 
 void draw_game(Bender* bender, Room* room);
@@ -83,6 +85,8 @@ void draw_minimap(Room* room, Bender* p);
 void draw_room(Room* room);
 void draw_player(Bender* p);
 void draw_stone(Bender* p);
+
+Model_Info_For_Shading* model_info_from_type(Tile_Type type, Ramp_Orientation ramp_direction);
 
 
 // temporary for testing rendering the cube

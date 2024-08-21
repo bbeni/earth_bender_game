@@ -492,17 +492,19 @@ void shader_draw_call(Model_Info_For_Shading* model_info, Material_Shader* shade
 
 	GLuint draw_type = GL_TRIANGLES;
 
+	if (shader->flags & Shader_Flags::USES_ALPHA) {
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glEnable(GL_BLEND);
+	}
+	else {
+		glDisable(GL_BLEND);
+	}
+
 	if (!(shader->flags & Shader_Flags::NO_SHADER_FLAGS)) {
 
 		if (shader->flags & Shader_Flags::USES_TEXTURE && model_info->texture_color) {
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, model_info->texture_color->gpu_handle);
-		}
-
-
-		if (shader->flags & Shader_Flags::USES_ALPHA) {
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-			glEnable(GL_BLEND);
 		}
 
 		if (shader->flags & Shader_Flags::WIREFRAME) {
@@ -513,8 +515,8 @@ void shader_draw_call(Model_Info_For_Shading* model_info, Material_Shader* shade
 		}
 
 		if (shader->flags & Shader_Flags::LINES) {
-			draw_type = GL_TRIANGLES;
-			glLineWidth(5.0f);
+			draw_type = GL_LINES;
+			glLineWidth(3.0f);
 		}
 	}
 

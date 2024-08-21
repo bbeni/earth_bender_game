@@ -161,7 +161,7 @@ GLuint find_uniform_location(GLuint shader_id, const char* value_name) {
 }
 
 void shader_uniform_set(GLuint shader_id, const char* value_name, const Mat4& mat4) {
-	glUseProgram(shader_id); // temporary
+	glUseProgram(shader_id);
 
 	GLuint location = find_uniform_location(shader_id, value_name);
 	check_gl_error_and_fail("location - shader_uniform_set(mat4)");
@@ -170,8 +170,7 @@ void shader_uniform_set(GLuint shader_id, const char* value_name, const Mat4& ma
 }
 
 void shader_uniform_set(GLuint shader_id, const char* value_name, const Vec3& vec3) {
-	glUseProgram(shader_id); // temporary
-
+	glUseProgram(shader_id);
 	GLuint location = find_uniform_location(shader_id, value_name);
 	check_gl_error_and_fail("location - shader_uniform_set(vec3)");
 	glUniform3fv(location, 1, &vec3.x);
@@ -179,8 +178,7 @@ void shader_uniform_set(GLuint shader_id, const char* value_name, const Vec3& ve
 }
 
 void shader_uniform_set(GLuint shader_id, const char* value_name, const Vec4& vec4) {
-	glUseProgram(shader_id); // temporary
-
+	glUseProgram(shader_id);
 	GLuint location = find_uniform_location(shader_id, value_name);
 	check_gl_error_and_fail("location - shader_uniform_set(vec4)");
 	glUniform4fv(location, 1, &vec4.x);
@@ -188,8 +186,7 @@ void shader_uniform_set(GLuint shader_id, const char* value_name, const Vec4& ve
 }
 
 void shader_uniform_set(GLuint shader_id, const char* value_name, const float value) {
-	glUseProgram(shader_id); // temporary
-
+	glUseProgram(shader_id);
 	GLuint location = find_uniform_location(shader_id, value_name);
 	check_gl_error_and_fail("location - shader_uniform_set(float)");
 	glUniform1f(location, value);
@@ -366,17 +363,17 @@ void backend_create_shaders() {
 	shader_editor_highlight = { 0 };
 	shader_editor_highlight.gl_id = load_shader_from_path("shaders/editor_highlight.glsl");
 	shader_editor_highlight.position_location = 0;
-	//shader_editor_highlight.normal_location = 1;
-	//shader_editor_highlight.uv_location = 2;
+	shader_editor_highlight.normal_location = 1;
+	shader_editor_highlight.uv_location = 2;
 	shader_editor_highlight.flags = (Shader_Flags) (Shader_Flags::USES_ALPHA | Shader_Flags::WIREFRAME);
 	init_editor_highlight_uniforms();
 
 	// editor highlight shader
 	shader_editor_box = { 0 };
-	shader_editor_box.gl_id = load_shader_from_path("shaders/material_brdf.glsl");//editor_bounding_box.glsl");
+	shader_editor_box.gl_id = load_shader_from_path("shaders/editor_box_lines.glsl");
 	shader_editor_box.position_location = 0;
-	//shader_editor_highlight.normal_location = 1;
-	//shader_editor_highlight.uv_location = 2;
+	shader_editor_box.normal_location = 1;
+	shader_editor_box.uv_location = 2;
 	shader_editor_box.flags = (Shader_Flags)(Shader_Flags::USES_ALPHA | Shader_Flags::LINES);
 	init_editor_box_uniforms();
 }

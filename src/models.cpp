@@ -300,6 +300,7 @@ Animated_Model load_anim_bada_file(const char* file_path) {
 	assert(*(uint32_t*)f_data == 0xdabadaba);
 
 	model.bounding_box = find_bounding_box(&model.meshes[0]);
+	model.scale = 1.0f;
 
 	return model;
 }
@@ -347,35 +348,39 @@ Static_Model load_model_bada_file(const char* file_path) {
 
 void construct_box_lines(Box_Line_Model* box)
 {
-	// top lid
+	// one corner 3 connections
 	box->points[0] = Vec3{ 0.5f, 0.5f, 0.5f };
-	box->points[1] = Vec3{ -0.5f, 0.5f, 0.5f };
-	box->points[2] = Vec3{ -0.5f, 0.5f, 0.5f };
-	box->points[3] = Vec3{ -0.5f, -0.5f, 0.5f };
-	box->points[4] = Vec3{ -0.5f, -0.5f, 0.5f };
-	box->points[5] = Vec3{ 0.5f, -0.5f, 0.5f };
-	box->points[6] = Vec3{ 0.5f, -0.5f, 0.5f };
-	box->points[7] = Vec3{ 0.5f, 0.5f, 0.5f };
+	box->points[1] = Vec3{ 0.5f, 0.5f, -0.5f};
+	box->points[2] = Vec3{ 0.5f, 0.5f, 0.5f };
+	box->points[3] = Vec3{ 0.5f, -0.5f, 0.5f };
+	box->points[4] = Vec3{ 0.5f, 0.5f, 0.5f };
+	box->points[5] = Vec3{ -0.5f, 0.5f, 0.5f };
 
-	// bottom lid
-	box->points[8] = Vec3{ 0.5f, 0.5f, -0.5f };
+	// opposite corner 3 connections
+	box->points[6] = Vec3{ -0.5f, -0.5f, -0.5f };
+	box->points[7] = Vec3{ -0.5f, -0.5f, 0.5f };
+	box->points[8] = Vec3{ -0.5f, -0.5f, -0.5f };
 	box->points[9] = Vec3{ -0.5f, 0.5f, -0.5f };
-	box->points[10] = Vec3{ -0.5f, 0.5f, -0.5f };
-	box->points[11] = Vec3{ -0.5f, -0.5f, -0.5f };
-	box->points[12] = Vec3{ -0.5f, -0.5f, -0.5f };
-	box->points[13] = Vec3{ 0.5f, -0.5f, -0.5f };
-	box->points[14] = Vec3{ 0.5f, -0.5f, -0.5f };
-	box->points[15] = Vec3{ 0.5f, 0.5f, -0.5f };
+	box->points[10] = Vec3{ -0.5f, -0.5f, -0.5f };
+	box->points[11] = Vec3{ 0.5f, -0.5f, -0.5f };
 
-	// vertical connections
-	box->points[16] = Vec3{ 0.5f, 0.5f, 0.5f };
-	box->points[17] = Vec3{ 0.5f, 0.5f, -0.5f };
-	box->points[18] = Vec3{ -0.5f, 0.5f, 0.5f };
-	box->points[19] = Vec3{ -0.5f, 0.5f, -0.5f };
-	box->points[20] = Vec3{ -0.5f, -0.5f, 0.5f };
-	box->points[21] = Vec3{ -0.5f, -0.5f, -0.5f };
-	box->points[22] = Vec3{ 0.5f, -0.5f, 0.5f };
-	box->points[23] = Vec3{ 0.5f, -0.5f, -0.5f };
+
+	// zig zag connections
+	box->points[12] = Vec3{ 0.5f, 0.5f, -0.5f };
+	box->points[13] = Vec3{ 0.5f, -0.5f, -0.5f };
+	box->points[14] = Vec3{ 0.5f, 0.5f, -0.5f };
+	box->points[15] = Vec3{ -0.5f, 0.5f, -0.5f };
+	
+	box->points[16] = Vec3{ 0.5f, -0.5f, 0.5f };
+	box->points[17] = Vec3{ 0.5f, -0.5f, -0.5f };
+	box->points[18] = Vec3{ 0.5f, -0.5f, 0.5f };
+	box->points[19] = Vec3{ -0.5f, -0.5f, 0.5f };
+
+	box->points[20] = Vec3{ -0.5f, 0.5f, 0.5f };
+	box->points[21] = Vec3{ -0.5f, -0.5f, 0.5f };
+	box->points[22] = Vec3{ -0.5f, 0.5f, 0.5f };
+	box->points[23] = Vec3{ -0.5f, 0.5f, -0.5f };
+
 }
 
 
@@ -401,5 +406,5 @@ Static_Model construct_box_lines() {
 	model.bounding_box = find_bounding_box(m);
 
 	return model;
-}
+} 
 

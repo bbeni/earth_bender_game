@@ -20,14 +20,15 @@ struct Mesh {
 
 struct Static_Model {
 	Mesh mesh;
-	Box bounding_box;
+	Box  bounding_box;
 };
 
 #define MAX_FRAMES_PER_ANIMATION 128
 struct Animated_Model {
 	size_t count;
-	Mesh meshes[MAX_FRAMES_PER_ANIMATION];
-	Box bounding_box;
+	Mesh   meshes[MAX_FRAMES_PER_ANIMATION];
+	Box    bounding_box;
+	float  scale;
 };
 
 enum Ramp_Orientation {

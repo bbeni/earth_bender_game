@@ -37,7 +37,12 @@ void*  data;     // any pointer for that matter!
 
 // free the array
 #define array_free(dyn_array) \
-	DYN_ARRAY_FREE((dyn_array)->items)
+	do { \
+		DYN_ARRAY_FREE((dyn_array)->data); \
+		(dyn_array)->data = NULL; \
+		(dyn_array)->count = 0; \
+		(dyn_array)->capacity = 0; \
+	} while (0)\
 
 // String dynamic array
 typedef struct {

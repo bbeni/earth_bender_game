@@ -101,6 +101,6 @@
     <None Include="shaders\material_phong.glsl" />
     <None Include="shaders\material_water.glsl" />
     <None Include="shaders\editor_highlight.glsl" />
-    <None Include="shaders\editor_bounding_box.glsl" />
+    <None Include="shaders\editor_box_lines.glsl" />
   </ItemGroup>
 </Project>

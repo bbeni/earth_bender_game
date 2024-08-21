@@ -2,6 +2,7 @@
 #include "rendering_backend.hpp"
 #include "shaders.hpp"
 
+
 void set_tile(Room* room, uint32_t i, uint32_t j, uint32_t elevation, Tile_Type type, Ramp_Orientation ramp) {
 	assert(i < room->depth);
 	assert(j < room->width);
@@ -10,6 +11,17 @@ void set_tile(Room* room, uint32_t i, uint32_t j, uint32_t elevation, Tile_Type 
 	TILE_AT(room, i, j, elevation).type = type;
 	TILE_AT(room, i, j, elevation).ramp_direction = ramp;
 	TILE_AT(room, i, j, elevation).allow_walking = true;
+
+	if (type == Tile_Type::AIR) return;
+
+	Vec3 pos = Vec3{ (float)i,(float)j,(float)elevation };
+
+	auto mi = model_info_from_type(type, ramp);
+	Box b = mi->model.bounding_box;
+	b.max += pos;
+	b.min += pos;
+
+	array_add(&room->tile_boxes, b);
 }
 
 void set_tile(Room* room, uint32_t i, uint32_t j, uint32_t elevation, Tile_Type type) {
@@ -38,74 +50,79 @@ void print_room(Room* room) {
 }
 
 Room room_alloc(uint32_t d, uint32_t w, uint32_t h) {
-	Room r;
+	Room r = { 0 };
 	r.depth = d;
 	r.width = w;
 	r.height = h;
+	
+	// tiles
 	r.tiles = (Floor_Tile*)malloc(sizeof(Floor_Tile) * d * w * h);
 	assert(r.tiles != NULL);
 	memset(r.tiles, 0, sizeof(Floor_Tile) * d * w * h);
+
 	return r;
 }
 
 void room_free(Room* room) {
 	free(room->tiles);
 	room->tiles = NULL;
-	// @MemoryLeak
-	// TODO: free also decoration tiles
+
+	if (room->tile_boxes.data != NULL) {
+		array_free(&room->tile_boxes);
+	}
 }
 
-void generate_room_example(Room* room) {
+Room generate_room_example(uint32_t depth, uint32_t width, uint32_t height) {
 
-	if (room->tiles == NULL) {
-		*room = room_alloc(room->depth, room->width, room->height);
-	}
+	Room room = room_alloc(depth, width, height);
 	
-	for (int i = 0; i < room->depth; i++) {
-		for (int j = 0; j < room->width; j++) {
+	for (int i = 0; i < room.depth; i++) {
+		for (int j = 0; j < room.width; j++) {
 			if (i*i + j*j > 1800)	continue; // circle
 
 			// lava hole
 			if ((i > 20) && (j > 5) && (i < 25) && (j < 13)) {
-				set_tile(room, i, j, 0, Tile_Type::LAVA);
+				set_tile(&room, i, j, 0, Tile_Type::LAVA);
 				continue;
 			}
 
 			if ((j > 23) && (i > 5) && (j < 29) && (i < 13)) {
-				set_tile(room, i, j, 5, Tile_Type::EARTH);
+				set_tile(&room, i, j, 5, Tile_Type::EARTH);
 				// add a lava tile below
-				set_tile(room, i, j, 0, Tile_Type::LAVA);
+				set_tile(&room, i, j, 0, Tile_Type::LAVA);
 				continue;
 			}
 
 			if ((i >= 1) && (i <= 6) && (j == 25)) {
-				set_tile(room, i, j, i, Tile_Type::EARTH, Ramp_Orientation::EAST);
+				set_tile(&room, i, j, i, Tile_Type::EARTH, Ramp_Orientation::EAST);
 				// add a lava tile below
-				set_tile(room, i, j, 0, Tile_Type::LAVA);
+				set_tile(&room, i, j, 0, Tile_Type::LAVA);
 				continue;
 			}
 
 			if ((i > 3 && i < 19) && (j > 3 && j < 19)) {
-				if (j == 10)	set_tile(room, i, j, 3, Tile_Type::STONE);
-				set_tile(room, i, j, 0, Tile_Type::WATER);// add a water tile below
+				if (j == 10)	set_tile(&room, i, j, 3, Tile_Type::STONE);
+				set_tile(&room, i, j, 0, Tile_Type::WATER);// add a water tile below
 			} else {
 				if (j == 9 || j == 10 || j == 11) {
-					set_tile(room, i, j, 1, Tile_Type::SAND);
+					set_tile(&room, i, j, 1, Tile_Type::SAND);
 				} else if (j == 12) {
-					set_tile(room, i, j, 1, Tile_Type::STONE, Ramp_Orientation::SOUTH);
+					set_tile(&room, i, j, 1, Tile_Type::STONE, Ramp_Orientation::SOUTH);
 				} else if (j == 8) {
-					set_tile(room, i, j, 1, Tile_Type::STONE, Ramp_Orientation::NORTH);
+					set_tile(&room, i, j, 1, Tile_Type::STONE, Ramp_Orientation::NORTH);
 				} else {
-					set_tile(room, i, j, 0, Tile_Type::GRASS);
+					set_tile(&room, i, j, 0, Tile_Type::GRASS);
 				}
 			}
 		}
 	}
 
-	set_tile(room, 3, 10, 2, Tile_Type::STONE, Ramp_Orientation::EAST);
-	set_tile(room, 4, 10, 3, Tile_Type::STONE, Ramp_Orientation::EAST);
-	set_tile(room, 19, 10, 2, Tile_Type::STONE, Ramp_Orientation::WEST);
-	set_tile(room, 18, 10, 3, Tile_Type::STONE, Ramp_Orientation::WEST);
+	set_tile(&room, 3, 10, 2, Tile_Type::STONE, Ramp_Orientation::EAST);
+	set_tile(&room, 4, 10, 3, Tile_Type::STONE, Ramp_Orientation::EAST);
+	set_tile(&room, 19, 10, 2, Tile_Type::STONE, Ramp_Orientation::WEST);
+	set_tile(&room, 18, 10, 3, Tile_Type::STONE, Ramp_Orientation::WEST);
+
+	return room;
 }
 
 
@@ -150,17 +167,21 @@ void init_models_for_drawing() {
 		exit(1);
 	}
 
-
 	// models editor
 	marker_round_model.model = g_model_catalog.names.marker_icosphere;
 	marker_round_model.texture_color = &g_texture_catalog.names.plain_red;
 	shader_init_model(&shader_brdf, &marker_round_model);
 
-	box_line_model.model = g_model_catalog.names.stone_block;//construct_box_lines();
+	box_line_model.model = construct_box_lines();
 	shader_init_model(&shader_editor_box, &box_line_model);
 
 	// player
+	float scale = 0.8f; 
 	player_model_info.model = load_anim_bada_file("../resources/3d_models/earth_bender_anim.bada");
+	player_model_info.model.scale = scale;
+	player_model_info.model.bounding_box.max = player_model_info.model.bounding_box.max * scale;
+	player_model_info.model.bounding_box.min = player_model_info.model.bounding_box.min * scale;
+
 	player_model_info.texture_color = &g_texture_catalog.names.earth_bender_color;
 	shader_init_animated_model(&shader_brdf, &player_model_info);
 
@@ -213,12 +234,22 @@ void draw_stone(Bender *p) {
 	shader_draw_call(&loaded_models.stone);
 }
 
+Model_Info_For_Shading* model_info_from_type(Tile_Type type, Ramp_Orientation ramp_direction) {
+	
+	auto model = &loaded_models.stone_tile;
+	
+	assert(model->initialized);
+
+	if (ramp_direction != Ramp_Orientation::FLAT) model = &loaded_models.stone_tile_ramp;
+	return model;
+}
+
 void draw_tile(Tile_Type type, Ramp_Orientation ramp_direction, float elevation, int16_t x, int16_t y) {
 
 	if (type == Tile_Type::AIR) return;
 
+	auto model = model_info_from_type(type, ramp_direction);
 
-	auto model = &loaded_models.stone_tile;
 	if (type == Tile_Type::LAVA) model = &loaded_models.lava_tile;
 	if (type == Tile_Type::WATER) model = &loaded_models.water_tile;
 
@@ -237,27 +268,24 @@ void draw_tile(Tile_Type type, Ramp_Orientation ramp_direction, float elevation,
 	Mat4 model_matrix = matrix_translation(Vec3{ 1.0f * x, 1.0f * y, elevation});
 	shader_uniform_set(current_shader, "model", model_matrix);
 
-
 	switch (ramp_direction) {
 	case Ramp_Orientation::SOUTH:
-		shader_draw_call(&loaded_models.stone_tile_ramp);
 		break;
 	case Ramp_Orientation::EAST:
 		shader_uniform_set(current_shader, "model", model_matrix * model_rotation_90());
-		shader_draw_call(&loaded_models.stone_tile_ramp);
 		break;
 	case Ramp_Orientation::NORTH:
 		shader_uniform_set(current_shader, "model", model_matrix * model_rotation_180());
-		shader_draw_call(&loaded_models.stone_tile_ramp);
 		break;
 	case Ramp_Orientation::WEST:
 		shader_uniform_set(current_shader, "model", model_matrix * model_rotation_270());
-		shader_draw_call(&loaded_models.stone_tile_ramp);
 		break;
 	default:
 		shader_draw_call(model);
 		break;
 	}
+
+	shader_draw_call(model);
 
 	// reset the ambient_strength
 	float ambient_strength = 0.05f;
@@ -276,6 +304,8 @@ void update_gpu_for_shading(Bender *bender) {
 	shader_uniform_set(shader_phong.gl_id, "view", view);
 	shader_uniform_set(shader_water.gl_id, "view", view);
 	shader_uniform_set(shader_editor_box.gl_id, "view", view);
+	shader_uniform_set(shader_editor_highlight.gl_id, "view", view);
+
 
 	// Projection
 	float near_plane = 0.01f;
@@ -291,6 +321,7 @@ void update_gpu_for_shading(Bender *bender) {
 	shader_uniform_set(shader_phong.gl_id, "projection", projection);
 	shader_uniform_set(shader_water.gl_id, "projection", projection);
 	shader_uniform_set(shader_editor_box.gl_id, "projection", projection);
+	shader_uniform_set(shader_editor_highlight.gl_id, "projection", projection);
 
 
 	// globals
@@ -319,12 +350,11 @@ void draw_player(Bender* p) {
 
 	Vec3 draw_pos = p->pos;
 	Mat4 rotation = matrix_rotation_euler(0.0f, 0.0f, (-p->direction_angle + M_PI));
-	Mat4 scale = matrix_scale(0.8f);
-	Mat4 rot_scale = rotation * scale;
-
+	Mat4 scale = matrix_scale(player_model_info.model.scale);
+	Mat4 translation = matrix_translation(draw_pos);
 
 	// Model
-	Mat4 model = matrix_translation(draw_pos) * rot_scale;
+	Mat4 model = translation * rotation * scale;
 	shader_uniform_set(shader_brdf.gl_id, "model", model);
 	shader_uniform_set(shader_brdf.gl_id, "ambient_strength", 0.15f);
 
@@ -344,16 +374,26 @@ void draw_player(Bender* p) {
 	Vec3 max = player_model_info.model.bounding_box.max;
 	Vec3 min = player_model_info.model.bounding_box.min;
 
-	draw_debug_sphere(rot_scale * max + draw_pos);
-	draw_debug_sphere(rot_scale * Vec3{ max.x, max.y, min.z } + draw_pos);
-	draw_debug_sphere(rot_scale * Vec3{ max.x, min.y, max.z } + draw_pos);
-	draw_debug_sphere(rot_scale * Vec3{ min.x, max.y, max.z } + draw_pos);
+	/*
+	draw_debug_sphere(rotation * max + draw_pos);
+	draw_debug_sphere(rotation * Vec3{ max.x, max.y, min.z } + draw_pos);
+	draw_debug_sphere(rotation * Vec3{ max.x, min.y, max.z } + draw_pos);
+	draw_debug_sphere(rotation * Vec3{ min.x, max.y, max.z } + draw_pos);
+	draw_debug_sphere(rotation * min + draw_pos);
+	draw_debug_sphere(rotation * Vec3{ min.x, min.y, max.z } + draw_pos);
+	draw_debug_sphere(rotation * Vec3{ min.x, max.y, min.z } + draw_pos);
+	draw_debug_sphere(rotation * Vec3{ max.x, min.y, min.z } + draw_pos);
+	*/
 
-	draw_debug_sphere(rot_scale * min + draw_pos);
-	draw_debug_sphere(rot_scale * Vec3{ min.x, min.y, max.z } + draw_pos);
-	draw_debug_sphere(rot_scale * Vec3{ min.x, max.y, min.z } + draw_pos);
-	draw_debug_sphere(rot_scale * Vec3{ max.x, min.y, min.z } + draw_pos);
+	Vec3 volume = max - min;
+	Mat4 box_scale = matrix_scale(volume);
+	Mat4 box_trans = matrix_translation((max + min) * 0.5f);
 
+	Mat4 transformation = translation * rotation * box_trans * box_scale ;
+
+	shader_uniform_set(shader_editor_box.gl_id, "highlight_color", Vec4{ 0.80f, 0.10f, 0.91f, 0.9f });
+	shader_uniform_set(shader_editor_box.gl_id, "model", transformation);
+	shader_draw_call(&box_line_model);
 }
 
 void draw_game(Bender* bender, Room* room) {

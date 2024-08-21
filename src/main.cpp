@@ -9,13 +9,18 @@
 int screen_width;
 int screen_height;
 
+struct Tile_Hover {
+	bool	 is_placable;
+	uint32_t i, j, k;
+};
+
 struct Editor_State {
 	bool initialized;
+
+	float zoom_level;
 	Vec3 camera_pos;
 	Vec3 camera_direction;
 	Vec3 camera_up;
-	float zoom_level;
-
 	float fov;
 	float near_plane;
 	float far_plane;
@@ -25,13 +30,15 @@ struct Editor_State {
 	int item_selected;
 	size_t item_count;
 	Box *item_boxes;
-
 	static const int items_per_row = 20;
+
+	Room* active_room;
+	Tile_Hover tile_hover;
 };
 
 Editor_State editor = { 0 };
 
-void init_editor() {
+void init_editor(Room* room) {
 
 	editor.zoom_level = 5;
 
@@ -70,6 +77,7 @@ void init_editor() {
 	}
 
 	editor.item_boxes = box;
+	editor.active_room = room;
 }
 
 void draw_debug_sphere(Vec3 pos) {
@@ -79,10 +87,35 @@ void draw_debug_sphere(Vec3 pos) {
 	shader_draw_call(&marker_round_model);
 }
 
+void draw_hover_tile_box(Vec3 pos, Box box) {
+	Vec3 max = box.max;
+	Vec3 min = box.min;
+
+	Vec3 volume = max - min;
+	Mat4 box_scale = matrix_scale(volume);
+	Mat4 box_trans = matrix_translation((max + min) * 0.5f);
+	Mat4 translation = matrix_translation(pos);
+
+	Mat4 transformation = translation * box_trans * box_scale;
+
+	shader_uniform_set(shader_editor_box.gl_id, "highlight_color", Vec4{ 0.40f, 0.10f, 0.91f, 0.9f });
+	shader_uniform_set(shader_editor_box.gl_id, "model", transformation);
+	shader_draw_call(&box_line_model);
+
+	draw_debug_sphere(max + pos);
+	draw_debug_sphere(Vec3{ max.x, max.y, min.z } + pos);
+	draw_debug_sphere(Vec3{ max.x, min.y, max.z } + pos);
+	draw_debug_sphere(Vec3{ min.x, max.y, max.z } + pos);
+	draw_debug_sphere(min + pos);
+	draw_debug_sphere(Vec3{ min.x, min.y, max.z } + pos);
+	draw_debug_sphere(Vec3{ min.x, max.y, min.z } + pos);
+	draw_debug_sphere(Vec3{ max.x, min.y, min.z } + pos);
+}
+
 void draw_editor(Room* room) {
 	if (!editor.initialized) {
 		editor.initialized = true;
-		init_editor();
+		init_editor(room);
 	}
 
 	Vec3 pos = editor.camera_pos + editor.camera_direction * editor.zoom_level;
@@ -106,11 +139,15 @@ void draw_editor(Room* room) {
 	int selected = editor.item_selected;
 	int hovered = editor.item_hovered;
 
-	// TODO: cleanup
-	Mat4 model = matrix_scale(1) * matrix_translation(Vec3{ 0, 0, 0.5f });
-	shader_uniform_set(shader_editor_box.gl_id, "model", model);
-	//shader_uniform_set(shader_editor_box.gl_id, "highlight_color", Vec4{ 0.00f, 0.99f, 0.01f, 0.9f });
-	shader_draw_call(&box_line_model);
+	if (editor.tile_hover.is_placable) {
+		// TODO: cleanup
+
+		Vec3 hover_pos = Vec3{ 0, 0, 0.5f } + Vec3{ (float)editor.tile_hover.i, (float)editor.tile_hover.j, (float)editor.tile_hover.k};
+		Mat4 model = matrix_scale(Vec3{ 1, 1, 0.5f }) * matrix_translation(hover_pos);
+		shader_uniform_set(shader_editor_box.gl_id, "model", model);
+		shader_uniform_set(shader_editor_box.gl_id, "highlight_color", Vec4{ 0.00f, 0.99f, 0.91f, 0.9f });
+		shader_draw_call(&box_line_model);
+	}
 
 	for (int i = 0; i < editor.item_count; i++) {
 		
@@ -143,9 +180,8 @@ void draw_editor(Room* room) {
 
 // find the hovered block index that is placed on the side
 // TODO: factor code that is copy pasted (i.e item position)
-void editor_find_item_hover_index() {
-
-	Ray ray = {0};
+Ray construct_mouse_ray() {
+	Ray ray = { 0 };
 
 	ray.origin = editor.camera_pos + editor.camera_direction * editor.zoom_level; // TODO: refactor copy paste from above
 
@@ -167,11 +203,39 @@ void editor_find_item_hover_index() {
 		ray.direction = direction;
 	}
 
+	return ray;
+}
+
+void editor_find_item_hover_index() {
+
 	editor.item_hovered = -1;
+
+	Ray ray = construct_mouse_ray();	
 	auto result = ray_cast(ray, editor.item_boxes, editor.item_count);
 	if (result.did_hit) {
 		editor.item_hovered = result.hit_index;
 		assert(result.hit_index < editor.item_count);
+	}
+}
+
+
+void editor_find_hover_place() {
+
+	if (!editor.initialized) return;
+	
+	editor.tile_hover.is_placable = false;
+
+	Ray ray = construct_mouse_ray();
+	Room* room = editor.active_room;
+	auto result = ray_cast(ray, room->tile_boxes.data, room->tile_boxes.count);
+	
+	if (result.did_hit) {
+		editor.tile_hover.is_placable = true;
+		Vec3 h = result.hit_position;
+
+		editor.tile_hover.i = (uint32_t)h.x;
+		editor.tile_hover.j = (uint32_t)h.y;
+		editor.tile_hover.k = (uint32_t)h.z;
 	}
 }
 
@@ -206,6 +270,9 @@ void handle_input_movement_editor() {
 			editor.item_selected = editor.item_hovered;
 		}
 	}
+
+	editor_find_hover_place();
+
 }
 
 void handle_input_walking(Bender &bender) {
@@ -260,17 +327,12 @@ int main() {
 
 	float shake_timer = 0.0f;
 
-	Room room = { 0 };
-	room.depth = 40;
-	room.width = 40;
-	room.height = 20;
-
-
-	generate_room_example(&room);
-
 	Vec4 color = { 1.0, 0.5, 0.0, 1.0 };
 
 	init_models_for_drawing();
+
+	Room room = generate_room_example(40, 40, 20);
+
 	draw_room(&room);
 
 	Bender bender = { 0 };
@@ -356,15 +418,16 @@ int main() {
 		// update code
 		//
 
-		update_player(&bender, &room);
-		//printf("action %d, pos (%f %f), target_angle %f, angle %f\n", player.current_action, player.pos.x, player.pos.x, player.target_direction_angle, player.direction_angle);
-		
+		if (program_state == Program_State::GAME) {
+			update_player(&bender, &room);
+			//printf("action %d, pos (%f %f), target_angle %f, angle %f\n", player.current_action, player.pos.x, player.pos.x, player.target_direction_angle, player.direction_angle);
+		}
 		
 		//
 		// draw code
 		//
 
-		clear_it(0.25f, 0.25f, 0.25f, 1.0f);
+		clear_it(0.15f, 0.15f, 0.15f, 1.0f);
 		
 		if (program_state == Program_State::GAME) {
 			draw_minimap(&room, &bender);
@@ -386,24 +449,6 @@ int main() {
 				}
 			}
 
-			Vec2 pos = { (float)2*mouse_x/ screen_width - 1.0f, -(float)2*mouse_y/ screen_height + 1.0f };
-			Vec2 size = { 0.05f, 0.075f };
-
-			immediate_quad(pos, size, color);
-
-			Vec4 fg_color = color;
-			size.x += 0.02f;
-			size.y += 0.03f;
-			fg_color.x += 0.2f;
-			fg_color.y += 0.2f;
-			fg_color.z += 0.2f;
-
-			clamp(&fg_color.x, 0, 1);
-			clamp(&fg_color.y, 0, 1);
-			clamp(&fg_color.z, 0, 1);
-
-			immediate_quad(pos, size, fg_color);
-
 			immediate_send();
 		}
 
@@ -421,7 +466,7 @@ int main() {
 	destroy_window(window_info.window_handle);
 }
 
-int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmdshow)
+static int APIENTRY WinMain( _In_ HINSTANCE hInst, _In_opt_ HINSTANCE hInstPrev, _In_ PSTR cmdline, _In_ int cmdshow)
 {
 	return main();
 }
