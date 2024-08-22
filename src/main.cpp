@@ -12,6 +12,7 @@ int screen_height;
 struct Tile_Hover {
 	bool	 is_placable;
 	uint32_t i, j, k;
+	uint32_t i_next, j_next, k_next;
 };
 
 struct Editor_State {
@@ -147,6 +148,12 @@ void draw_editor(Room* room) {
 		shader_uniform_set(shader_editor_box.gl_id, "model", model);
 		shader_uniform_set(shader_editor_box.gl_id, "highlight_color", Vec4{ 0.00f, 0.99f, 0.91f, 0.9f });
 		shader_draw_call(&box_line_model);
+
+		hover_pos = Vec3{ 0, 0, 0.5f } + Vec3{ (float)editor.tile_hover.i_next, (float)editor.tile_hover.j_next, (float)editor.tile_hover.k_next };
+		model = matrix_scale(Vec3{ 1, 1, 0.5f }) * matrix_translation(hover_pos);
+		shader_uniform_set(shader_editor_box.gl_id, "model", model);
+		shader_uniform_set(shader_editor_box.gl_id, "highlight_color", Vec4{ 0.90f, 0.29f, 0.91f, 0.9f });
+		shader_draw_call(&box_line_model);
 	}
 
 	for (int i = 0; i < editor.item_count; i++) {
@@ -232,10 +239,39 @@ void editor_find_hover_place() {
 	if (result.did_hit) {
 		editor.tile_hover.is_placable = true;
 		Vec3 h = result.hit_position;
+		Vec3 normal = result.normal;
 
 		editor.tile_hover.i = (uint32_t)h.x;
 		editor.tile_hover.j = (uint32_t)h.y;
 		editor.tile_hover.k = (uint32_t)h.z;
+
+		// find closest normal vector of the box
+
+		Vec3 directions[6] = {
+			Vec3{ 0, 0, 1},
+			Vec3{ 0, 1, 0},
+			Vec3{ 1, 0, 0},
+			Vec3{ 0, 0, -1},
+			Vec3{ 0, -1, 0},
+			Vec3{ -1, 0, 0},
+		};
+
+		float max_dot_product = -FLT_MAX;
+		int max_index = 0;
+
+		for (int i = 0; i < 6; i++) { 
+			float dot_product = dot(directions[i], normal);
+			if (dot_product > max_dot_product) {
+				max_dot_product = dot_product;
+				max_index = i;
+			}
+		}
+
+		Vec3 snaped_normal = directions[max_index];
+
+		editor.tile_hover.i_next = (uint32_t)snaped_normal.x + editor.tile_hover.i;
+		editor.tile_hover.j_next = (uint32_t)snaped_normal.y + editor.tile_hover.j;
+		editor.tile_hover.k_next = (uint32_t)snaped_normal.z + editor.tile_hover.k;
 	}
 }
 
@@ -269,6 +305,10 @@ void handle_input_movement_editor() {
 		if (editor.item_hovered >= 0) {
 			editor.item_selected = editor.item_hovered;
 		}
+		else if (editor.tile_hover.is_placable) {
+			set_tile(editor.active_room, editor.tile_hover.i_next, editor.tile_hover.j_next, editor.tile_hover.k_next, Tile_Type::GRASS);
+		}
+
 	}
 
 	editor_find_hover_place();
