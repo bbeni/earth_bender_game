@@ -19,7 +19,7 @@ bool ctrl_state = false;
 bool alt_state = false;
 bool meta_state = false;
 
-std::map<uint32_t, bool>			key_down_table;
+std::map<uint32_t, bool>            key_down_table;
 std::map<uint32_t, Key_State_Flags> key_flags_table;
 
 // Winodw stuff
@@ -431,6 +431,13 @@ void event_add(Event event) {
 
 void events_reset() {
 	events_this_frame.count = 0;
+
+	// reset the flags BEGIN and END
+	uint32_t reset_mask = ~(BEGIN | END);
+	for (auto it = key_flags_table.begin(); it != key_flags_table.end(); it++) {
+		it->second = (Key_State_Flags) (it->second & reset_mask);
+	}
+	
 }
 
 

@@ -56,7 +56,6 @@ Ray_Cast_Result ray_cast(Ray ray, Box* boxes, size_t count)
 			// we hit the sphere
 			// TODO: check for actual hit and continue
 			
-			// TODO: get actual hit position not center of sphere
 			float center_dist = length(center - ray.origin);
 			if (center_dist > min_dist) {
 				// we are further away than the last hit
@@ -66,10 +65,11 @@ Ray_Cast_Result ray_cast(Ray ray, Box* boxes, size_t count)
 			min_dist = center_dist;
 
 			res.did_hit = true;
-			res.hit_position = center;
+			res.hit_position = center - ray.direction * radius;
+			res.hit_object_position = center;
 			res.hit_index = i;
 
-			res.normal = res.hit_position - center;
+			res.normal = Vec3{0, 0, 1};//center - res.hit_position;
 			normalize_or_z_axis(&res.normal);
 
 			break;

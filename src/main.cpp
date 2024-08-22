@@ -13,6 +13,7 @@ struct Tile_Hover {
 	bool	 is_placable;
 	uint32_t i, j, k;
 	uint32_t i_next, j_next, k_next;
+	Vec3     hit_position;
 };
 
 struct Editor_State {
@@ -143,17 +144,24 @@ void draw_editor(Room* room) {
 	if (editor.tile_hover.is_placable) {
 		// TODO: cleanup
 
-		Vec3 hover_pos = Vec3{ 0, 0, 0.5f } + Vec3{ (float)editor.tile_hover.i, (float)editor.tile_hover.j, (float)editor.tile_hover.k};
+		Vec3 next_pos = Vec3{ (float)editor.tile_hover.i_next, (float)editor.tile_hover.j_next, (float)editor.tile_hover.k_next };
+		Vec3 pos = Vec3{ (float)editor.tile_hover.i, (float)editor.tile_hover.j, (float)editor.tile_hover.k };
+
+
+		Vec3 hover_pos = Vec3{ 0, 0, 0.5f } + pos;
 		Mat4 model = matrix_scale(Vec3{ 1, 1, 0.5f }) * matrix_translation(hover_pos);
 		shader_uniform_set(shader_editor_box.gl_id, "model", model);
 		shader_uniform_set(shader_editor_box.gl_id, "highlight_color", Vec4{ 0.00f, 0.99f, 0.91f, 0.9f });
 		shader_draw_call(&box_line_model);
 
-		hover_pos = Vec3{ 0, 0, 0.5f } + Vec3{ (float)editor.tile_hover.i_next, (float)editor.tile_hover.j_next, (float)editor.tile_hover.k_next };
+		hover_pos = Vec3{ 0, 0, 0.5f } + next_pos;
 		model = matrix_scale(Vec3{ 1, 1, 0.5f }) * matrix_translation(hover_pos);
 		shader_uniform_set(shader_editor_box.gl_id, "model", model);
 		shader_uniform_set(shader_editor_box.gl_id, "highlight_color", Vec4{ 0.90f, 0.29f, 0.91f, 0.9f });
 		shader_draw_call(&box_line_model);
+
+		draw_debug_sphere(hover_pos);
+		draw_debug_sphere(editor.tile_hover.hit_position);
 	}
 
 	for (int i = 0; i < editor.item_count; i++) {
@@ -238,12 +246,12 @@ void editor_find_hover_place() {
 	
 	if (result.did_hit) {
 		editor.tile_hover.is_placable = true;
-		Vec3 h = result.hit_position;
+		Vec3 h = result.hit_object_position;
 		Vec3 normal = result.normal;
 
-		editor.tile_hover.i = (uint32_t)h.x;
-		editor.tile_hover.j = (uint32_t)h.y;
-		editor.tile_hover.k = (uint32_t)h.z;
+		editor.tile_hover.i = (uint32_t)floorf(h.x);
+		editor.tile_hover.j = (uint32_t)floorf(h.y);
+		editor.tile_hover.k = (uint32_t)floorf(h.z);
 
 		// find closest normal vector of the box
 
@@ -272,6 +280,8 @@ void editor_find_hover_place() {
 		editor.tile_hover.i_next = (uint32_t)snaped_normal.x + editor.tile_hover.i;
 		editor.tile_hover.j_next = (uint32_t)snaped_normal.y + editor.tile_hover.j;
 		editor.tile_hover.k_next = (uint32_t)snaped_normal.z + editor.tile_hover.k;
+
+		editor.tile_hover.hit_position = result.hit_position;
 	}
 }
 
@@ -300,8 +310,9 @@ void handle_input_movement_editor() {
 	editor.camera_pos += Vec3{direction.x, direction.y, 0} * get_frame_time() * 15;
 
 	editor_find_item_hover_index();
+	editor_find_hover_place();
 
-	if ((get_key_flags_state((uint32_t)Key_Code::LEFT_BTN) & Key_State_Flags::DOWN)) {
+	if ((get_key_flags_state((uint32_t)Key_Code::LEFT_BTN) & Key_State_Flags::BEGIN)) {
 		if (editor.item_hovered >= 0) {
 			editor.item_selected = editor.item_hovered;
 		}
@@ -311,7 +322,6 @@ void handle_input_movement_editor() {
 
 	}
 
-	editor_find_hover_place();
 
 }
 
@@ -390,6 +400,7 @@ int main() {
 	while (!quit) {
 
 		update_window_events();
+		printf("hello: %x\n", get_key_flags_state((uint32_t)Key_Code::LEFT_BTN));
 
 		if (program_state == Program_State::GAME) {
 			handle_input_walking(bender);
