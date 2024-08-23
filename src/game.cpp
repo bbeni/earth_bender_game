@@ -270,6 +270,14 @@ void init_models_for_drawing() {
 	loaded_models.stone_tile.texture_color = &g_texture_catalog.names.stone_tile_color;
 	shader_init_model(&shader_brdf, &loaded_models.stone_tile);
 
+	loaded_models.grass_tile.model = g_model_catalog.names.stone_tile;
+	loaded_models.grass_tile.texture_color = &g_texture_catalog.names.grass_tile_color;
+	shader_init_model(&shader_brdf, &loaded_models.grass_tile);
+
+	loaded_models.earth_tile.model = g_model_catalog.names.stone_tile;
+	loaded_models.earth_tile.texture_color = &g_texture_catalog.names.earth_tile_color;
+	shader_init_model(&shader_brdf, &loaded_models.earth_tile);
+
 	loaded_models.lava_tile.model = g_model_catalog.names.stone_tile;
 	loaded_models.lava_tile.texture_color = &g_texture_catalog.names.lava_tile_color;
 	shader_init_model(&shader_brdf, &loaded_models.lava_tile);
@@ -326,8 +334,12 @@ void draw_tile(Tile_Type type, Ramp_Orientation ramp_direction, float elevation,
 
 	auto model = model_info_from_type(type, ramp_direction);
 
+	// TODO: refactor this
 	if (type == Tile_Type::LAVA) model = &loaded_models.lava_tile;
-	if (type == Tile_Type::WATER) model = &loaded_models.water_tile;
+	else if (type == Tile_Type::WATER) model = &loaded_models.water_tile;
+	else if (type == Tile_Type::GRASS) model = &loaded_models.grass_tile;
+	else if (type == Tile_Type::EARTH) model = &loaded_models.earth_tile;
+
 
 	GLuint current_shader = model->shader->gl_id;
 

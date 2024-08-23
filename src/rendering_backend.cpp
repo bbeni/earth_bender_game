@@ -509,14 +509,14 @@ void shader_draw_call(Model_Info_For_Shading* model_info, Material_Shader* shade
 
 		if (shader->flags & Shader_Flags::WIREFRAME) {
 			draw_type = GL_LINE_STRIP;
-			glLineWidth(3.0f);
+			glLineWidth(2.0f);
 			//glEnable(GL_LINE_SMOOTH);
 			//glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
 		}
 
 		if (shader->flags & Shader_Flags::LINES) {
 			draw_type = GL_LINES;
-			glLineWidth(3.0f);
+			glLineWidth(2.0f);
 		}
 	}
 

@@ -25,9 +25,13 @@ union Texture_Catalog {
 		Texture default_color;
 		Texture earth_bender_color;
 		Texture stone_block_color;
+
 		Texture stone_tile_color;
+		Texture grass_tile_color;
+		Texture earth_tile_color;
 		Texture lava_tile_color;
 		Texture water_tile_color;
+
 		Texture fluffy_monster_color;
 		Texture plain_red;
 	} names;

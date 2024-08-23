@@ -119,6 +119,8 @@ void draw_debug_box(Box box, Vec4 color);
 extern union Loaded_Models {
 	struct {
 		Model_Info_For_Shading stone_tile;
+		Model_Info_For_Shading grass_tile;
+		Model_Info_For_Shading earth_tile;
 		Model_Info_For_Shading lava_tile;
 		Model_Info_For_Shading water_tile;
 		Model_Info_For_Shading stone_tile_ramp;

@@ -99,7 +99,9 @@ void init_editor(Room* room) {
 		array_add(row, p);
 		p = Placeable{ TILE, &loaded_models.lava_tile, Tile_Type::LAVA, Ramp_Orientation::FLAT };
 		array_add(row, p);
-		p = Placeable{ TILE, &loaded_models.stone_tile, Tile_Type::GRASS, Ramp_Orientation::FLAT };
+		p = Placeable{ TILE, &loaded_models.grass_tile, Tile_Type::GRASS, Ramp_Orientation::FLAT };
+		array_add(row, p);
+		p = Placeable{ TILE, &loaded_models.earth_tile, Tile_Type::EARTH, Ramp_Orientation::FLAT };
 		array_add(row, p);
 		p = Placeable{ TILE, &loaded_models.stone_tile_ramp, Tile_Type::STONE, Ramp_Orientation::NORTH };
 		array_add(row, p);
@@ -559,9 +561,17 @@ int main() {
 
 	Room_Set rooms = { 0 };
 	{
-		Room r = generate_room_example(40, 40, 18);
-		array_add(&rooms, r);
+		Room r;
 		r = generate_room_flat(10, 10, 11);
+		array_add(&rooms, r);
+		
+		r = generate_room_flat(10, 10, 11);
+		array_add(&rooms, r);
+
+		r = generate_room_flat(10, 20, 11);
+		array_add(&rooms, r);
+
+		r = generate_room_example(40, 40, 18);
 		array_add(&rooms, r);
 	}
 
