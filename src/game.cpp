@@ -190,6 +190,17 @@ Room generate_room_example(uint32_t depth, uint32_t width, uint32_t height) {
 	return room;
 }
 
+Room generate_room_flat(uint32_t depth, uint32_t width, uint32_t height) {
+	Room room = room_alloc(depth, width, height);
+	for (int i = 0; i < room.depth; i++) {
+		for (int j = 0; j < room.width; j++) {
+			set_tile(&room, i, j, 0, Tile_Type::STONE);
+		}
+	}
+	return room;
+}
+
+
 
 Vec4 color_from_tile_type(Tile_Type type) {
 	switch (type) {

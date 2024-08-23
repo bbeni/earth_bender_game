@@ -45,9 +45,7 @@ struct Room {
 
 };
 
-void set_tile(Room* room, uint32_t i, uint32_t j, uint32_t elevation, Tile_Type type, Ramp_Orientation ramp);
-void set_tile(Room* room, uint32_t i, uint32_t j, uint32_t elevation, Tile_Type type);
-void remove_tile(Room* room, uint32_t i, uint32_t j, uint32_t elevation);
+
 
 // Stupid utility stuff
 struct Index_Pos { uint32_t i, j, elevation; };
@@ -57,10 +55,16 @@ Index_Pos position_conversion(Vec3 pos);
 bool tile_in_bounds(Room* room, uint32_t i, uint32_t j, uint32_t elevation);
 bool tile_in_bounds(Room* room, Vec3 pos);
 
-
-void print_room(Room* room);
 Room room_alloc(uint32_t d, uint32_t w, uint32_t h);
 void room_free(Room* room);
+void print_room(Room* room);
+void set_tile(Room* room, uint32_t i, uint32_t j, uint32_t elevation, Tile_Type type, Ramp_Orientation ramp);
+void set_tile(Room* room, uint32_t i, uint32_t j, uint32_t elevation, Tile_Type type);
+void remove_tile(Room* room, uint32_t i, uint32_t j, uint32_t elevation);
+
+Room generate_room_example(uint32_t depth, uint32_t width, uint32_t height);
+Room generate_room_flat(uint32_t depth, uint32_t width, uint32_t height);
+
 
 enum class Action {
 	IDLE,
@@ -90,8 +94,7 @@ struct Bender {
 };
 
 
-Room generate_room_example(uint32_t depth, uint32_t width, uint32_t height);
-void update_player(Bender* p, Room* rooms);
+void update_player(Bender* p, Room* room);
 
 void draw_game(Bender* bender, Room* room);
 

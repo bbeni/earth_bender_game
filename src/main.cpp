@@ -211,6 +211,10 @@ void draw_hover_tile_box(Vec3 pos, Box box) {
 }
 
 void draw_editor(Room* room) {
+
+	// TODO: separate editor update and drawing..
+	editor.active_room = room;
+
 	if (!editor.initialized) {
 		editor.initialized = true;
 		init_editor(room);
@@ -513,6 +517,22 @@ void handle_input_walking(Bender &bender) {
 	}
 }
 
+struct Room_Set {
+	Room*  data;
+	size_t count;
+	size_t capacity;
+	size_t active_room_index;
+};
+
+Room* active_room(Room_Set* rooms) {
+	assert(rooms->active_room_index < rooms->count);
+	return &rooms->data[rooms->active_room_index];
+}
+
+void next_room(Room_Set* rooms) {
+	rooms->active_room_index = (rooms->active_room_index + 1) % rooms->count;
+}
+
 enum class Program_State {
 	GAME,
 	EDITOR,
@@ -537,9 +557,15 @@ int main() {
 
 	init_models_for_drawing();
 
-	Room room = generate_room_example(40, 40, 18);
+	Room_Set rooms = { 0 };
+	{
+		Room r = generate_room_example(40, 40, 18);
+		array_add(&rooms, r);
+		r = generate_room_flat(10, 10, 11);
+		array_add(&rooms, r);
+	}
 
-	draw_room(&room);
+	draw_room(active_room(&rooms));
 
 	Bender bender = { 0 };
 	bender.pos = Vec3{1.0f, 1.0f, 0.5f };
@@ -595,6 +621,10 @@ int main() {
 					else 
 						program_state = Program_State::GAME;
 				}
+
+				if (event.key_code == Key_Code::N) {
+					next_room(&rooms);
+				}
 			}
 
 			// game specific events
@@ -625,7 +655,7 @@ int main() {
 		//
 
 		if (program_state == Program_State::GAME) {
-			update_player(&bender, &room);
+			update_player(&bender, active_room(&rooms));
 			//printf("action %d, pos (%f %f), target_angle %f, angle %f\n", player.current_action, player.pos.x, player.pos.x, player.target_direction_angle, player.direction_angle);
 		}
 		
@@ -636,8 +666,8 @@ int main() {
 		clear_it(0.15f, 0.15f, 0.15f, 1.0f);
 		
 		if (program_state == Program_State::GAME) {
-			draw_minimap(&room, &bender);
-			draw_game(&bender, &room);
+			draw_minimap(active_room(&rooms), &bender);
+			draw_game(&bender, active_room(&rooms));
 
 			// ui stuff
 			float shake_amount = shake_timer;
@@ -659,7 +689,7 @@ int main() {
 		}
 
 		if (program_state == Program_State::EDITOR) {
-			draw_editor(&room);
+			draw_editor(active_room(&rooms));
 		}
 
 		swap_buffers(&window_info);
