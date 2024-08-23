@@ -414,6 +414,7 @@ void draw_room(Room* room) {
 void draw_player(Bender* p) {
 
 	Vec3 draw_pos = p->pos;
+	draw_pos.z += p->jump_pos;
 	Mat4 rotation = matrix_rotation_euler(0.0f, 0.0f, (-p->direction_angle + M_PI));
 	Mat4 scale = matrix_scale(player_model_info.model.scale);
 	Mat4 translation = matrix_translation(draw_pos);
@@ -572,6 +573,17 @@ void update_player(Bender* b, Room* room) {
 		}
 
 		b->pos = desired_pos;
+	}
+
+	if (b->jumping) {
+		float delta = b->jump_vel * frame_time;
+		b->jump_pos += delta;
+		b->jump_vel -= 5* 9.81 * frame_time;
+		if (b->jump_pos <= 0) {
+			b->jumping = false;
+			b->jump_vel = 0;
+			b->jump_pos = 0;
+		}
 	}
 }
 

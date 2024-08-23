@@ -393,6 +393,10 @@ void handle_input_walking(Bender &bender) {
 	if (bender.current_action == Action::WALKING)
 		bender.target_direction_angle = angle_between(direction, Vec2{ 0, 1 });
 
+	if (get_key_flags_state((uint32_t)Key_Code::SPACE) & Key_State_Flags::BEGIN) {
+		bender.jumping = true;
+		bender.jump_vel = 15.0f;
+	}
 }
 
 enum class Program_State {

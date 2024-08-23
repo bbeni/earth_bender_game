@@ -83,6 +83,10 @@ struct Bender {
 	float aspect; // @Temporary
 
 	bool use_orthographic; // @Temporary
+
+	bool jumping;
+	float jump_vel;
+	float jump_pos;
 };
 
 
