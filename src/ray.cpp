@@ -73,6 +73,7 @@ Ray_Cast_Result ray_cast(Ray ray, Box* boxes, size_t count)
 			res.hit_position = sphere_hit_position;
 			res.hit_object_position = center;
 			res.hit_index = i;
+			res.hit_distance = dist_to_hit;
 
 			res.normal = res.hit_position - center;
 			normalize_or_z_axis(&res.normal);

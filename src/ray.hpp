@@ -17,6 +17,7 @@ float dist_to_box(Box box, Vec3 point);
 
 struct Ray_Cast_Result {
 	bool did_hit;
+	float hit_distance;
 	Vec3 hit_position;
 	Vec3 hit_object_position;
 	Vec3 normal;

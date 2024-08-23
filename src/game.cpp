@@ -16,7 +16,7 @@ Vec3 position_conversion(Index_Pos index_pos) {
 
 // inverse conversion
 Index_Pos position_conversion(Vec3 pos) {
-	return Index_Pos{ (uint32_t)floorf(pos.x), (uint32_t)floorf(pos.y), (uint32_t)floorf(pos.y * 2.0f)};
+	return Index_Pos{ (uint32_t)floorf(pos.x), (uint32_t)floorf(pos.y), (uint32_t)floorf(pos.z * 2.0f)};
 }
 
 
@@ -334,8 +334,6 @@ void draw_tile(Tile_Type type, Ramp_Orientation ramp_direction, float elevation,
 	shader_uniform_set(current_shader, "model", model_matrix);
 
 	switch (ramp_direction) {
-	case Ramp_Orientation::SOUTH:
-		break;
 	case Ramp_Orientation::EAST:
 		shader_uniform_set(current_shader, "model", model_matrix * model_rotation_90());
 		break;
@@ -346,7 +344,6 @@ void draw_tile(Tile_Type type, Ramp_Orientation ramp_direction, float elevation,
 		shader_uniform_set(current_shader, "model", model_matrix * model_rotation_270());
 		break;
 	default:
-		shader_draw_call(model);
 		break;
 	}
 

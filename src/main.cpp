@@ -16,6 +16,27 @@ struct Tile_Hover {
 	Vec3 secondary_pos;
 };
 
+
+enum Placeable_Type {
+	TILE,
+	DECORATION,
+};
+
+struct Placeable {
+	Placeable_Type          placeable_type;
+	Model_Info_For_Shading* model_info;
+	Tile_Type               tile_type;        // if it is a tile
+	Ramp_Orientation        ramp_orientation; // if it is a tile
+
+	Box                     selection_box;    // will be set by code if it is Box{}
+};
+
+struct Placeable_Row {
+	Placeable* data;
+	uint32_t   count;
+	uint32_t   capacity;
+};
+
 struct Editor_State {
 	bool initialized;
 
@@ -28,11 +49,17 @@ struct Editor_State {
 	float far_plane;
 	float aspect;
 
-	int placeable_hovered;
-	int placeable_selected;
-	size_t placeable_count;
-	Box *placeable_boxes;
-	static const int placeables_per_row = 20;
+	Placeable* placeable_hovered;
+	Placeable* placeable_selected;
+
+	Placeable_Row placeable_tiles;
+	Placeable_Row placeable_decorations;
+
+	static const int n_placeable_rows = 2;
+	Placeable_Row* row_ps[n_placeable_rows] = {
+		&placeable_tiles,
+		&placeable_decorations,
+	};
 
 	Room* active_room;
 	Tile_Hover tile_hover;
@@ -61,24 +88,76 @@ void init_editor(Room* room) {
 	editor.far_plane = 1000.0f;
 	editor.aspect = 1.4f;
 
-	editor.placeable_hovered = -1;
-	editor.placeable_selected = -1;
-	editor.placeable_count = sizeof(loaded_models.as_array) / sizeof(loaded_models.as_array[0]);
 
-	// TODO: handle free
-	Box* box = (Box*)malloc(editor.placeable_count * sizeof(Box));
-	assert(box != NULL);
+	{
+		Placeable p;
+		Placeable_Row* row = &editor.placeable_tiles;
 
-	for (int i = 0; i < editor.placeable_count; i++) {
-		int items_per_row = editor.placeables_per_row;
-		Vec3 item_pos = Vec3{ -2 - (float)(i / items_per_row), (float)(i % items_per_row), 0 };
-		//box[i].max = item_pos + Vec3{ 0.5f, 0.5f, 1.0f };
-		//box[i].min = item_pos - Vec3{ -0.5f, -0.5f, 0.0f };
-		box[i].max = loaded_models.as_array[i].model.bounding_box.max + item_pos;
-		box[i].min = loaded_models.as_array[i].model.bounding_box.min + item_pos;
+		p = Placeable{ TILE, &loaded_models.stone_tile, Tile_Type::STONE, Ramp_Orientation::FLAT };
+		array_add(row, p);
+		p = Placeable{ TILE, &loaded_models.water_tile, Tile_Type::WATER, Ramp_Orientation::FLAT };
+		array_add(row, p);
+		p = Placeable{ TILE, &loaded_models.lava_tile, Tile_Type::LAVA, Ramp_Orientation::FLAT };
+		array_add(row, p);
+		p = Placeable{ TILE, &loaded_models.stone_tile, Tile_Type::GRASS, Ramp_Orientation::FLAT };
+		array_add(row, p);
+		p = Placeable{ TILE, &loaded_models.stone_tile_ramp, Tile_Type::STONE, Ramp_Orientation::NORTH };
+		array_add(row, p);
+		p = Placeable{ TILE, &loaded_models.stone_tile_ramp, Tile_Type::STONE, Ramp_Orientation::EAST };
+		array_add(row, p);
+		p = Placeable{ TILE, &loaded_models.stone_tile_ramp, Tile_Type::STONE, Ramp_Orientation::SOUTH };
+		array_add(row, p);
+		p = Placeable{ TILE, &loaded_models.stone_tile_ramp, Tile_Type::STONE, Ramp_Orientation::WEST };
+		array_add(row, p);
+
+		p = Placeable{ TILE, &loaded_models.stone_tile_ramp_special, Tile_Type::STONE, Ramp_Orientation::NORTH };
+		array_add(row, p);
+
+
+		for (int i = 0; i < row->count; i++) {
+			Vec3 pos = Vec3{ -2, (float)i, 0 };
+
+			Placeable* p = &row->data[i];
+			if (p->selection_box.max == Vec3{ 0, 0, 0 } && p->selection_box.min == Vec3{ 0, 0, 0 }) {
+				p->selection_box = p->model_info->model.bounding_box;
+				p->selection_box.max += pos;
+				p->selection_box.min += pos;
+			}
+
+		}
+	}
+	
+	{
+		Placeable p;
+		Placeable_Row* row = &editor.placeable_decorations;
+
+		p = Placeable{ DECORATION, &loaded_models.cube };
+		array_add(row, p);
+		p = Placeable{ DECORATION, &loaded_models.stone };
+		array_add(row, p);
+		//p = Placeable{ DECORATION, &loaded_models.monster };
+		//array_add(row, p);
+		//p = Placeable{ DECORATION, &loaded_models.bender };
+		//array_add(row, p);
+
+		for (int i = 0; i < row->count; i++) {
+			Vec3 pos = Vec3{ -3, (float)i, 0 };
+
+			Placeable* p = &row->data[i];
+			if (p->selection_box.max == Vec3{ 0, 0, 0 } && p->selection_box.min == Vec3{ 0, 0, 0 }) {
+				p->selection_box = p->model_info->model.bounding_box;
+				p->selection_box.max += pos;
+				p->selection_box.min += pos;
+			}
+
+		}
 	}
 
-	editor.placeable_boxes = box;
+
+	assert(editor.placeable_tiles.count > 0);
+	editor.placeable_selected = &editor.placeable_tiles.data[0];
+	editor.placeable_hovered = NULL;
+
 	editor.active_room = room;
 }
 
@@ -92,17 +171,6 @@ void draw_debug_sphere(Vec3 pos) {
 void draw_debug_box(Box box, Vec4 color) {
 	Vec3 max = box.max;
 	Vec3 min = box.min;
-
-	/*
-	draw_debug_sphere(rotation * max + draw_pos);
-	draw_debug_sphere(rotation * Vec3{ max.x, max.y, min.z } + draw_pos);
-	draw_debug_sphere(rotation * Vec3{ max.x, min.y, max.z } + draw_pos);
-	draw_debug_sphere(rotation * Vec3{ min.x, max.y, max.z } + draw_pos);
-	draw_debug_sphere(rotation * min + draw_pos);
-	draw_debug_sphere(rotation * Vec3{ min.x, min.y, max.z } + draw_pos);
-	draw_debug_sphere(rotation * Vec3{ min.x, max.y, min.z } + draw_pos);
-	draw_debug_sphere(rotation * Vec3{ max.x, min.y, min.z } + draw_pos);
-	*/
 
 	Vec3 dimensions = max - min;
 	Mat4 box_scale = matrix_scale(dimensions);
@@ -130,6 +198,7 @@ void draw_hover_tile_box(Vec3 pos, Box box) {
 	shader_uniform_set(shader_editor_box.gl_id, "model", transformation);
 	shader_draw_call(&box_line_model);
 
+	/*
 	draw_debug_sphere(max + pos);
 	draw_debug_sphere(Vec3{ max.x, max.y, min.z } + pos);
 	draw_debug_sphere(Vec3{ max.x, min.y, max.z } + pos);
@@ -138,6 +207,7 @@ void draw_hover_tile_box(Vec3 pos, Box box) {
 	draw_debug_sphere(Vec3{ min.x, min.y, max.z } + pos);
 	draw_debug_sphere(Vec3{ min.x, max.y, min.z } + pos);
 	draw_debug_sphere(Vec3{ max.x, min.y, min.z } + pos);
+	*/
 }
 
 void draw_editor(Room* room) {
@@ -164,8 +234,6 @@ void draw_editor(Room* room) {
 	shader_uniform_set(shader_water.gl_id, "time", get_time());
 	shader_uniform_set(shader_brdf.gl_id, "ambient_strength", 0.5f);
 
-	int selected = editor.placeable_selected;
-	int hovered = editor.placeable_hovered;
 
 	if (editor.tile_hover.is_placable) {
 		// TODO: cleanup
@@ -191,28 +259,59 @@ void draw_editor(Room* room) {
 		draw_debug_sphere(editor.tile_hover.hit_position);
 	}
 
-	for (int i = 0; i < editor.placeable_count; i++) {
-		
-		int items_per_row = editor.placeables_per_row;
-		Mat4 model_rotation = matrix_rotation_euler(0, 0, 0);
-		Vec3 item_pos = Vec3{ -2 - (float)(i / items_per_row), (float)(i % items_per_row), 0 };
-		Mat4 translation = matrix_translation(item_pos);
-		shader_uniform_set(shader_brdf.gl_id, "model", translation * model_rotation);
-		shader_uniform_set(shader_water.gl_id, "model", translation * model_rotation);
-		shader_draw_call(&loaded_models.as_array[i]);
-		
-		if (i == selected) {
-			shader_uniform_set(shader_editor_highlight.gl_id, "highlight_color", Vec4{ 0.00f, 0.99f, 0.01f, 0.9f });
-			Mat4 scale = matrix_scale(1.002f);
-			shader_uniform_set(shader_editor_highlight.gl_id, "model", translation * model_rotation * scale);
-			shader_draw_call(&loaded_models.as_array[i], &shader_editor_highlight);
-		}
 
-		if (i == hovered) {
-			shader_uniform_set(shader_editor_highlight.gl_id, "highlight_color", Vec4{ 0.99f, 0.99f, 0.99f, 0.9f });
-			Mat4 scale = matrix_scale(1.002f);
-			shader_uniform_set(shader_editor_highlight.gl_id, "model", translation * model_rotation * scale);
-			shader_draw_call(&loaded_models.as_array[i], &shader_editor_highlight);
+
+
+
+	for (int row = 0; row < editor.n_placeable_rows; row++) {
+		
+		Placeable_Row* placables = editor.row_ps[row];
+
+		for (int i = 0; i < placables->count; i++) {
+		
+			Placeable* p = &placables->data[i];
+
+
+			Mat4 model_rotation = matrix_rotation_euler(0, 0, 0);
+			if (p->placeable_type == TILE) {
+				switch (p->ramp_orientation) {
+				case Ramp_Orientation::EAST:
+					model_rotation = model_rotation_90();
+					break;
+				case Ramp_Orientation::NORTH:
+					model_rotation = model_rotation_180();
+					break;
+				case Ramp_Orientation::WEST:
+					model_rotation = model_rotation_270();
+					break;
+				}
+			}
+			
+			//float offset = (p->selection_box.max.z - p->selection_box.min.z) * 0.5f;
+			//Vec3 item_pos = (p->selection_box.min + p->selection_box.min) *0.5f;
+			//item_pos.z += offset;
+			
+			
+			Vec3 item_pos = Vec3{ (float) (-row-2), (float)(i), 0};
+
+			Mat4 translation = matrix_translation(item_pos);
+			shader_uniform_set(p->model_info->shader->gl_id, "model", translation * model_rotation);
+			shader_draw_call(p->model_info);
+
+			if (p == editor.placeable_selected) {
+				shader_uniform_set(shader_editor_highlight.gl_id, "highlight_color", Vec4{ 0.00f, 0.99f, 0.01f, 0.9f });
+				Mat4 scale = matrix_scale(1.002f);
+				shader_uniform_set(shader_editor_highlight.gl_id, "model", translation * model_rotation * scale);
+				shader_draw_call(p->model_info, &shader_editor_highlight);
+			}
+
+			if (p == editor.placeable_hovered) {
+				shader_uniform_set(shader_editor_highlight.gl_id, "highlight_color", Vec4{ 0.99f, 0.99f, 0.99f, 0.9f });
+				Mat4 scale = matrix_scale(1.002f);
+				shader_uniform_set(shader_editor_highlight.gl_id, "model", translation * model_rotation * scale);
+				shader_draw_call(p->model_info, &shader_editor_highlight);
+			}
+
 		}
 	}
 
@@ -256,13 +355,22 @@ Ray construct_mouse_ray() {
 
 void editor_find_item_hover_index() {
 
-	editor.placeable_hovered = -1;
+	editor.placeable_hovered = NULL;
 
-	Ray ray = construct_mouse_ray();	
-	auto result = ray_cast(ray, editor.placeable_boxes, editor.placeable_count);
-	if (result.did_hit) {
-		editor.placeable_hovered = result.hit_index;
-		assert(result.hit_index < editor.placeable_count);
+	// TODO: refactor this shit so we can use ray_cast() on arbityrary structs conataining Box?
+	Ray ray = construct_mouse_ray();
+	float min_distance = FLT_MAX;
+	for (int i = editor.n_placeable_rows - 1; i >= 0; i--) {
+		for (int index = 0; index < editor.row_ps[i]->count; index++) {
+			auto result = ray_cast(ray, &editor.row_ps[i]->data[index].selection_box, 1);
+			if (result.did_hit) {
+				if (result.hit_distance < min_distance) {
+					min_distance = result.hit_distance;
+					editor.placeable_hovered = &editor.row_ps[i]->data[index];
+				}
+			}
+		}
+		
 	}
 }
 
@@ -342,14 +450,20 @@ void handle_input_movement_editor() {
 	editor_find_hover_place();
 
 	if ((get_key_flags_state((uint32_t)Key_Code::LEFT_BTN) & Key_State_Flags::BEGIN)) {
-		if (editor.placeable_hovered >= 0) {
+		if (editor.placeable_hovered != 0) {
 			editor.placeable_selected = editor.placeable_hovered;
 		}
-		else if (editor.tile_hover.is_placable) {
+		else if (editor.tile_hover.is_placable && editor.placeable_selected != NULL) {
 			uint32_t i = (uint32_t)editor.tile_hover.secondary_pos.x;
 			uint32_t j = (uint32_t)editor.tile_hover.secondary_pos.y;
 			uint32_t k = (uint32_t)(editor.tile_hover.secondary_pos.z * 2.0f);
-			set_tile(editor.active_room, i, j, k, Tile_Type::STONE);
+
+			if (editor.placeable_selected->placeable_type == Placeable_Type::TILE) {
+				Tile_Type type = editor.placeable_selected->tile_type;
+				Ramp_Orientation ori = editor.placeable_selected->ramp_orientation;
+
+				set_tile(editor.active_room, i, j, k, type, ori);
+			}
 		}
 	}
 
