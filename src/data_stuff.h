@@ -1,18 +1,37 @@
 // Manual allocation Management
 // Dynamic arrays
 
+/* Dynamic array macros:
+	array_add
+	array_unordered_remove
+	array_free
+
+dyn_array has to be smth like:
+
+struct Example_Array {
+	size_t capacity;
+	size_t count;
+	struct T {
+		int   x;
+		float y;
+	};
+	T*     data;     // any pointer!
+}
+
+Example_Array array = { 0 };
+
+T t = T{ 1, 2.0f };
+array_add(&array, t);
+array_add(&array, t);
+
+*/
+
+
 #pragma once
 
 #include <cassert>
 #include <cstdlib>
 
-/* dyn_array has
-
-size_t capacity;
-size_t count;
-void*  data;     // any pointer for that matter!
-
-*/
 
 #define DYN_ARRAY_REALLOC realloc       // standard realloc for now
 #define DYN_ARRAY_FREE    free          // standard free for now
@@ -35,7 +54,16 @@ void*  data;     // any pointer for that matter!
 
 // #define array_init(dyn_array, cap)
 
-// free the array
+// remove the item at index (put the last item there -> shrink size by 1, so order is not perserved!)
+#define array_unordered_remove(dyn_array, index) \
+	do { \
+		assert((index) >= 0); \
+		assert((index) < (dyn_array)->count); \
+		(dyn_array)->data[index] = (dyn_array)->data[(dyn_array)->count-1]; \
+		(dyn_array)->count -= 1; \
+	} while(0)
+
+// free the allocated memory of array
 #define array_free(dyn_array) \
 	do { \
 		DYN_ARRAY_FREE((dyn_array)->data); \
@@ -44,7 +72,7 @@ void*  data;     // any pointer for that matter!
 		(dyn_array)->capacity = 0; \
 	} while (0)\
 
-// String dynamic array
+// String dynamic array example
 typedef struct {
 	char* data;
 	size_t count;

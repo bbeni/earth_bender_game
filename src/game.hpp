@@ -47,7 +47,17 @@ struct Room {
 
 void set_tile(Room* room, uint32_t i, uint32_t j, uint32_t elevation, Tile_Type type, Ramp_Orientation ramp);
 void set_tile(Room* room, uint32_t i, uint32_t j, uint32_t elevation, Tile_Type type);
-void clear_tile(Room* room, uint32_t i, uint32_t j, uint32_t elevation);
+void remove_tile(Room* room, uint32_t i, uint32_t j, uint32_t elevation);
+
+// Stupid utility stuff
+struct Index_Pos { uint32_t i, j, elevation; };
+Vec3 position_conversion(uint32_t i, uint32_t j, uint32_t elevation);
+Vec3 position_conversion(Index_Pos index_pos);
+Index_Pos position_conversion(Vec3 pos);
+bool tile_in_bounds(Room* room, uint32_t i, uint32_t j, uint32_t elevation);
+bool tile_in_bounds(Room* room, Vec3 pos);
+
+
 void print_room(Room* room);
 Room room_alloc(uint32_t d, uint32_t w, uint32_t h);
 void room_free(Room* room);
@@ -97,7 +107,7 @@ extern Model_Info_For_Shading marker_round_model;
 void init_models_for_drawing();
 
 void draw_debug_sphere(Vec3 pos);
-
+void draw_debug_box(Box box, Vec4 color);
 
 extern union Loaded_Models {
 	struct {

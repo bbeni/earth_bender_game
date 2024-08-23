@@ -18,8 +18,10 @@ struct Vec3 {
 	Vec3 operator-(const Vec3& other) const;
 	Vec3 operator*(float f) const;
 	bool operator!=(const Vec3& other) const;
+	bool operator==(const Vec3& other) const;
 	Vec3& operator+=(const Vec3& other);
 	Vec3& operator-=(const Vec3& other);
+
 };
 
 struct Vec2 {
@@ -28,6 +30,7 @@ struct Vec2 {
 	Vec2 operator-(const Vec2& other) const;
 	Vec2 operator*(float f) const;
 	bool operator!=(const Vec2& other) const;
+	bool operator==(const Vec2& other) const;
 	Vec2& operator+=(const Vec2& other);
 	Vec2& operator-=(const Vec2& other);
 };

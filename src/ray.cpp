@@ -44,35 +44,38 @@ Ray_Cast_Result ray_cast(Ray ray, Box* boxes, size_t count)
 
 	float min_dist = FLT_MAX;
 
-	for (int i = 0; i < count; i++) {
+	for (int i = count-1; i >= 0; i--) {
 		// first find out if we are inside the bounding sphere of the box
 		Box* b = &boxes[i];
 		Vec3 center = (b->max + b->min) * 0.5f;
 		float radius = length(b->max - b->min) * 0.5f;
 		float t = dot(ray.direction, center - ray.origin);
 		float x = length(ray.origin + ray.direction * t - center);
-		float f = x;
 		if (x <= radius) {
 			// we hit the sphere
-			// TODO: check for actual hit and continue
+
+			float delta = sqrtf(radius*radius - x*x);
+			float t0 = t + delta;
+			Vec3 sphere_hit_position = ray.origin + ray.direction * t0;
+
+			// TODO: check for actual hit with surfaces
 			
-			float center_dist = length(center - ray.origin);
-			if (center_dist > min_dist) {
+			float dist_to_hit = length(sphere_hit_position - ray.origin);
+			if (dist_to_hit > min_dist) {
 				// we are further away than the last hit
 				assert(res.did_hit);
 				continue;
 			}
-			min_dist = center_dist;
+
+			min_dist = dist_to_hit;
 
 			res.did_hit = true;
-			res.hit_position = center - ray.direction * radius;
+			res.hit_position = sphere_hit_position;
 			res.hit_object_position = center;
 			res.hit_index = i;
 
-			res.normal = Vec3{0, 0, 1};//center - res.hit_position;
+			res.normal = res.hit_position - center;
 			normalize_or_z_axis(&res.normal);
-
-			break;
 		}
 	}
 

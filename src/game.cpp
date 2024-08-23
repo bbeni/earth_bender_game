@@ -3,10 +3,65 @@
 #include "shaders.hpp"
 
 
-void set_tile(Room* room, uint32_t i, uint32_t j, uint32_t elevation, Tile_Type type, Ramp_Orientation ramp) {
+
+// forward conversion
+Vec3 position_conversion(uint32_t i, uint32_t j, uint32_t elevation) {
+	return Vec3{ (float)i,(float)j,(float)elevation * 0.5f };
+}
+
+// forward conversion
+Vec3 position_conversion(Index_Pos index_pos) {
+	return Vec3{ (float)index_pos.i, (float)index_pos.j, (float)index_pos.elevation * 0.5f };
+}
+
+// inverse conversion
+Index_Pos position_conversion(Vec3 pos) {
+	return Index_Pos{ (uint32_t)floorf(pos.x), (uint32_t)floorf(pos.y), (uint32_t)floorf(pos.y * 2.0f)};
+}
+
+
+bool tile_in_bounds(Room* room, uint32_t i, uint32_t j, uint32_t elevation) {
+	return i < room->depth && j < room->width && elevation < room->height;
+}
+
+bool tile_in_bounds(Room* room, Vec3 pos) {
+	Index_Pos ip = position_conversion(pos);
+	return tile_in_bounds(room, ip.i, ip.j, ip.elevation);
+}
+
+
+
+void remove_tile(Room* room, uint32_t i, uint32_t j, uint32_t elevation) {
 	assert(i < room->depth);
 	assert(j < room->width);
 	assert(elevation < room->height);
+
+	auto type = TILE_AT(room, i, j, elevation).type;
+	if (type == Tile_Type::AIR) return;
+
+	auto ramp_dir = TILE_AT(room, i, j, elevation).ramp_direction;
+	Vec3 pos = position_conversion(i, j, elevation);
+
+	auto mi = model_info_from_type(type, ramp_dir);
+	Box b = mi->model.bounding_box;
+	b.max += pos;
+	b.min += pos;
+
+	set_tile(room, i, j, elevation, Tile_Type::AIR);
+
+	// TODO: this is inconsistent see set_tile()
+	for (int i = 0; i < room->tile_boxes.count; i++) {
+		Box bi = room->tile_boxes.data[i];
+		if (b.max == bi.max && b.min == bi.min) {
+			array_unordered_remove(&room->tile_boxes, i);
+			return;
+		}
+	}
+
+}
+
+void set_tile(Room* room, uint32_t i, uint32_t j, uint32_t elevation, Tile_Type type, Ramp_Orientation ramp) {
+	if (!tile_in_bounds(room, i, j, elevation)) return;
 
 	TILE_AT(room, i, j, elevation).type = type;
 	TILE_AT(room, i, j, elevation).ramp_direction = ramp;
@@ -14,27 +69,30 @@ void set_tile(Room* room, uint32_t i, uint32_t j, uint32_t elevation, Tile_Type 
 
 	if (type == Tile_Type::AIR) return;
 
-	Vec3 pos = Vec3{ (float)i,(float)j,(float)elevation };
+	Vec3 pos = position_conversion(i, j, elevation);
 
 	auto mi = model_info_from_type(type, ramp);
 	Box b = mi->model.bounding_box;
 	b.max += pos;
 	b.min += pos;
 
+	// replace the one if we have already a collision box there 
+	// TODO: this is inconsistent if we have a floating point deviation or smth
+	// maybe better just link it to the actual tile!
+	//  same problem above in remove_tile()
+	for (int i = 0; i < room->tile_boxes.count; i++) {
+		Box bi = room->tile_boxes.data[i];
+		if (b.max == bi.max && b.min == bi.min) {
+			room->tile_boxes.data[i] = b;
+			return;
+		}
+	}
+
 	array_add(&room->tile_boxes, b);
 }
 
 void set_tile(Room* room, uint32_t i, uint32_t j, uint32_t elevation, Tile_Type type) {
 	set_tile(room, i, j, elevation, type, Ramp_Orientation::FLAT);
-}
-
-
-void clear_tile(Room* room, uint32_t i, uint32_t j, uint32_t elevation) {
-	set_tile(room, i, j, elevation, Tile_Type::AIR, Ramp_Orientation::FLAT);
-}
-
-void set_decoration_tile() {
-
 }
 
 void print_room(Room* room) {
@@ -75,6 +133,7 @@ void room_free(Room* room) {
 Room generate_room_example(uint32_t depth, uint32_t width, uint32_t height) {
 
 	Room room = room_alloc(depth, width, height);
+
 	
 	for (int i = 0; i < room.depth; i++) {
 		for (int j = 0; j < room.width; j++) {
@@ -121,6 +180,12 @@ Room generate_room_example(uint32_t depth, uint32_t width, uint32_t height) {
 	set_tile(&room, 4, 10, 3, Tile_Type::STONE, Ramp_Orientation::EAST);
 	set_tile(&room, 19, 10, 2, Tile_Type::STONE, Ramp_Orientation::WEST);
 	set_tile(&room, 18, 10, 3, Tile_Type::STONE, Ramp_Orientation::WEST);
+
+
+	set_tile(&room, 1, 1, 1, Tile_Type::STONE, Ramp_Orientation::FLAT);
+
+	//for (int i = 10 - 1; i >= 0; i--)
+	//	set_tile(&room, 0, 10, i, Tile_Type::STONE, Ramp_Orientation::FLAT);
 
 	return room;
 }

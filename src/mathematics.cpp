@@ -175,6 +175,11 @@ bool Vec3::operator!=(const Vec3& other) const {
 	return x != other.x || y != other.y || z != other.z;
 }
 
+bool Vec3::operator==(const Vec3& other) const {
+	return x == other.x && y == other.y && z == other.z;
+}
+
+
 Vec3& Vec3::operator+=(const Vec3& other)
 {
 	x += other.x;
@@ -228,6 +233,9 @@ bool Vec2::operator!=(const Vec2& other) const {
 	return x != other.x || y != other.y;
 }
 
+bool Vec2::operator==(const Vec2& other) const {
+	return x == other.x && y == other.y;
+}
 
 
 const Mat4 mat4_unit =
