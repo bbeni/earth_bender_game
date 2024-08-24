@@ -144,6 +144,7 @@
     <ClCompile Include="catalogs.cpp" />
     <ClCompile Include="resource_loading.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="serialization.cpp" />
     <ClCompile Include="shaders.cpp" />
     <ClCompile Include="stb_libraries\stb_ds.h" />
   </ItemGroup>
@@ -160,8 +161,10 @@
     <ClInclude Include="rendering_backend.hpp" />
     <ClInclude Include="catalogs.hpp" />
     <ClInclude Include="resource_loading.hpp" />
+    <ClInclude Include="serialization.hpp" />
     <ClInclude Include="shaders.hpp" />
     <ClInclude Include="stb_libraries\stb_image.h" />
+    <ClInclude Include="_serialized_rooms.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\editor_box_lines.glsl" />

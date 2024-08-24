@@ -1,6 +1,9 @@
 #include "input_and_window.hpp"
 #include "rendering_backend.hpp"
 #include "game.hpp"
+#include "serialization.hpp"
+
+#include "_serialized_rooms.h"
 
 #include <time.h>
 #include "shaders.hpp"
@@ -519,13 +522,6 @@ void handle_input_walking(Bender &bender) {
 	}
 }
 
-struct Room_Set {
-	Room*  data;
-	size_t count;
-	size_t capacity;
-	size_t active_room_index;
-};
-
 Room* active_room(Room_Set* rooms) {
 	assert(rooms->active_room_index < rooms->count);
 	return &rooms->data[rooms->active_room_index];
@@ -559,8 +555,13 @@ int main() {
 
 	init_models_for_drawing();
 
+
+	static const bool LOAD_SERIALIZED = true;
+
 	Room_Set rooms = { 0 };
-	{
+	if (LOAD_SERIALIZED) {
+		deserialize_rooms(&rooms);
+	} else {
 		Room r;
 		r = generate_room_flat(10, 10, 11);
 		array_add(&rooms, r);
@@ -573,6 +574,8 @@ int main() {
 
 		r = generate_room_example(40, 40, 18);
 		array_add(&rooms, r);
+
+		//build_and_save_rooms_c_file(&rooms, "_serialized_rooms.h");
 	}
 
 	draw_room(active_room(&rooms));
@@ -635,6 +638,7 @@ int main() {
 				if (event.key_code == Key_Code::N) {
 					next_room(&rooms);
 				}
+
 			}
 
 			// game specific events
@@ -654,6 +658,13 @@ int main() {
 				if (event.type == MOUSE_WHEEL_V) {
 					editor.zoom_level += event.wheel_delta * 0.02f;
 					clamp(&editor.zoom_level, 0, 20.6f); // heuristic
+				}
+
+				if ((event.type == KEYBOARD) && (event.key_state & BEGIN)) {
+					if (event.key_code == Key_Code::P) {
+						build_and_save_rooms_c_file(&rooms, "_serialized_rooms.h");
+						printf("Info: Saved to _serialized_rooms.h\n");
+					}
 				}
 			}
 

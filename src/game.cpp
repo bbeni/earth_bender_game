@@ -1,8 +1,7 @@
 #include "game.hpp"
 #include "rendering_backend.hpp"
 #include "shaders.hpp"
-
-
+#include "serialization.hpp"
 
 // forward conversion
 Vec3 position_conversion(uint32_t i, uint32_t j, uint32_t elevation) {
@@ -39,6 +38,8 @@ void remove_tile(Room* room, uint32_t i, uint32_t j, uint32_t elevation) {
 	auto type = TILE_AT(room, i, j, elevation).type;
 	if (type == Tile_Type::AIR) return;
 
+	serialize_remove_tile_call(room->id, i, j, elevation);
+
 	auto ramp_dir = TILE_AT(room, i, j, elevation).ramp_direction;
 	Vec3 pos = position_conversion(i, j, elevation);
 
@@ -60,14 +61,19 @@ void remove_tile(Room* room, uint32_t i, uint32_t j, uint32_t elevation) {
 
 }
 
+
 void set_tile(Room* room, uint32_t i, uint32_t j, uint32_t elevation, Tile_Type type, Ramp_Orientation ramp) {
 	if (!tile_in_bounds(room, i, j, elevation)) return;
-
+	
 	TILE_AT(room, i, j, elevation).type = type;
+	
+	if (type == Tile_Type::AIR) return;
+
+	serialize_set_tile_call(room->id, i, j, elevation, type, ramp);
+
+
 	TILE_AT(room, i, j, elevation).ramp_direction = ramp;
 	TILE_AT(room, i, j, elevation).allow_walking = true;
-
-	if (type == Tile_Type::AIR) return;
 
 	Vec3 pos = position_conversion(i, j, elevation);
 
@@ -107,11 +113,19 @@ void print_room(Room* room) {
 	}
 }
 
+uint32_t g_room_id_counter = 0;
+
 Room room_alloc(uint32_t d, uint32_t w, uint32_t h) {
+
+	serialize_new_room_call(d, w, h);
+
 	Room r = { 0 };
 	r.depth = d;
 	r.width = w;
 	r.height = h;
+
+	// set id
+	r.id = g_room_id_counter++;
 	
 	// tiles
 	r.tiles = (Floor_Tile*)malloc(sizeof(Floor_Tile) * d * w * h);
@@ -133,7 +147,6 @@ void room_free(Room* room) {
 Room generate_room_example(uint32_t depth, uint32_t width, uint32_t height) {
 
 	Room room = room_alloc(depth, width, height);
-
 	
 	for (int i = 0; i < room.depth; i++) {
 		for (int j = 0; j < room.width; j++) {
@@ -180,7 +193,6 @@ Room generate_room_example(uint32_t depth, uint32_t width, uint32_t height) {
 	set_tile(&room, 4, 10, 3, Tile_Type::STONE, Ramp_Orientation::EAST);
 	set_tile(&room, 19, 10, 2, Tile_Type::STONE, Ramp_Orientation::WEST);
 	set_tile(&room, 18, 10, 3, Tile_Type::STONE, Ramp_Orientation::WEST);
-
 
 	set_tile(&room, 1, 1, 1, Tile_Type::STONE, Ramp_Orientation::FLAT);
 

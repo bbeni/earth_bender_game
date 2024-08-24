@@ -43,9 +43,15 @@ struct Room {
 		size_t capacity;
 	} tile_boxes;
 
+	uint32_t id;
 };
 
-
+struct Room_Set {
+	Room* data;
+	size_t count;
+	size_t capacity;
+	size_t active_room_index;
+};
 
 // Stupid utility stuff
 struct Index_Pos { uint32_t i, j, elevation; };
