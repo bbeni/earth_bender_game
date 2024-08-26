@@ -1,3 +1,7 @@
+// Copyright (C) 2024 Benjamin Froelich
+// This file is part of https://github.com/bbeni/earth_bender_game
+// For conditions of distribution and use, see copyright notice in project root.
+
 #ifndef RESOURCES_H
 #define RESOURCES_H
 #include "glad/glad.h"

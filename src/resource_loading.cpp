@@ -1,3 +1,7 @@
+// Copyright (C) 2024 Benjamin Froelich
+// This file is part of https://github.com/bbeni/earth_bender_game
+// For conditions of distribution and use, see copyright notice in project root.
+
 #pragma warning(disable:4996) // ty microsoft -> to be able to use fopen
 #include "resource_loading.hpp"
 #include "catalogs.hpp"

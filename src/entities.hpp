@@ -1,3 +1,7 @@
+// Copyright (C) 2024 Benjamin Froelich
+// This file is part of https://github.com/bbeni/earth_bender_game
+// For conditions of distribution and use, see copyright notice in project root.
+
 /* 3 Approaches i am debating which one: trying to describe
 * 
 * 1. Approach: Have a tagged Entity struct containing a union of all possible

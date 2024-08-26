@@ -1,3 +1,7 @@
+// Copyright (C) 2024 Benjamin Froelich
+// This file is part of https://github.com/bbeni/earth_bender_game
+// For conditions of distribution and use, see copyright notice in project root.
+
 // shader to highlight selected or hover or preview
 
 COMMUNICATE vec3 frag_pos;

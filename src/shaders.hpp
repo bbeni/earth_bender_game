@@ -1,8 +1,11 @@
+// Copyright (C) 2024 Benjamin Froelich
+// This file is part of https://github.com/bbeni/earth_bender_game
+// For conditions of distribution and use, see copyright notice in project root.
+
 #ifndef SHADERS_H
 #define SHADERS_H
 
 #include "mathematics.hpp"
-
 #include "glad/glad.h"
 #include <string.h>
 #include <stdio.h>
@@ -17,7 +20,6 @@ GLuint compile_shader(const char* shader_text, int shader_length = -1);
 
 typedef struct Immediate_Shader {
 	GLuint gl_id;
-	
 	GLuint position_location; // immediate_shader
 	GLuint color_location;    // immediate_shader
 
@@ -25,7 +27,6 @@ typedef struct Immediate_Shader {
 
 extern Immediate_Shader* current_shader;
 extern Immediate_Shader immediate_shader_color;
-
 
 enum Shader_Flags : uint32_t {
 	NO_SHADER_FLAGS = 0x0,
@@ -38,7 +39,6 @@ enum Shader_Flags : uint32_t {
 typedef struct Material_Shader {
 	GLuint gl_id;
 	Shader_Flags flags;
-
 	GLuint position_location;
 	GLuint normal_location;
 	GLuint uv_location;

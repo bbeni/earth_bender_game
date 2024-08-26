@@ -1,16 +1,17 @@
+// Copyright (C) 2024 Benjamin Froelich
+// This file is part of https://github.com/bbeni/earth_bender_game
+// For conditions of distribution and use, see copyright notice in project root.
+
 #include "glad/glad.h"
-
-#include "rendering_backend.hpp"
-
-#include "shaders.hpp"
-
-#include "resource_loading.hpp"
-
 //#include <GL/gl.h>
+#pragma comment(lib, "opengl32.lib")
+
 #include <stdio.h>
 #include <iostream>
 
-#pragma comment(lib, "opengl32.lib")
+#include "rendering_backend.hpp"
+#include "shaders.hpp"
+#include "resource_loading.hpp"
 
 #define GL_GLEXT_PROTOTYPES 1
 #define GL3_PROTOTYPES 1

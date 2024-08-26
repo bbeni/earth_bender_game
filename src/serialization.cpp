@@ -1,3 +1,12 @@
+// Copyright (C) 2024 Benjamin Froelich
+// This file is part of https://github.com/bbeni/earth_bender_game
+// For conditions of distribution and use, see copyright notice in project root.
+
+/* TODO: replace this with actual serialization for develpment phase.
+This is just here to have a quick and dirty way of saving rooms.
+Having to compile everytime we load the new rooms is not so friendly.
+*/
+
 #include "serialization.hpp"
 #include "data_stuff.h"
 
@@ -9,7 +18,7 @@ void append_string(Code_Builder* cb, const char* string) {
 	};
 }
 
-// TODO: hope this never exceeds
+// TODO: ckeck this never exceeds
 #define MAX_LENGTH_FRAGMENT 256
 void append_stringf(Code_Builder* cb, const char* format, ...) {
 	
@@ -79,6 +88,11 @@ void build_and_save_rooms_c_file(Room_Set* rooms, const char* filename) {
 	}
 
 	fwrite(code.data, code.count, 1, file);
+
+	array_free(&code);
+	array_free(&cb_new_rooms);
+	array_free(&cb_tile_mods);
+
 }
 
 

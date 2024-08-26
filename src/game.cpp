@@ -1,3 +1,7 @@
+// Copyright (C) 2024 Benjamin Froelich
+// This file is part of https://github.com/bbeni/earth_bender_game
+// For conditions of distribution and use, see copyright notice in project root.
+
 #include "game.hpp"
 #include "rendering_backend.hpp"
 #include "shaders.hpp"
@@ -50,15 +54,17 @@ void remove_tile(Room* room, uint32_t i, uint32_t j, uint32_t elevation) {
 
 	set_tile(room, i, j, elevation, Tile_Type::AIR);
 
-	// TODO: this is inconsistent see set_tile()
+	// TODO: link the boxes to the tiles and vice versa so we know what to delete,
+	//       this is inconsistent see set_tile()
+	int removed_count = 0;
 	for (int i = 0; i < room->tile_boxes.count; i++) {
 		Box bi = room->tile_boxes.data[i];
 		if (b.max == bi.max && b.min == bi.min) {
 			array_unordered_remove(&room->tile_boxes, i);
-			return;
+			removed_count++;
 		}
 	}
-
+	assert(removed_count == 1); // make sure we have one box per tile and delete exactly one
 }
 
 
@@ -85,7 +91,7 @@ void set_tile(Room* room, uint32_t i, uint32_t j, uint32_t elevation, Tile_Type 
 	// replace the one if we have already a collision box there 
 	// TODO: this is inconsistent if we have a floating point deviation or smth
 	// maybe better just link it to the actual tile!
-	//  same problem above in remove_tile()
+	//  same problem in remove_tile()
 	for (int i = 0; i < room->tile_boxes.count; i++) {
 		Box bi = room->tile_boxes.data[i];
 		if (b.max == bi.max && b.min == bi.min) {
