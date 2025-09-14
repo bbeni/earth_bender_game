@@ -563,6 +563,7 @@ int main() {
 	static const bool LOAD_SERIALIZED = true;
 
 	Room_Set rooms = { 0 };
+
 	if (LOAD_SERIALIZED) {
 		deserialize_rooms(&rooms);
 	} else {
@@ -582,6 +583,9 @@ int main() {
 		//build_and_save_rooms_c_file(&rooms, "_serialized_rooms.h");
 	}
 
+	next_room(&rooms);
+	next_room(&rooms);
+	next_room(&rooms);
 	draw_room(active_room(&rooms));
 
 	Bender bender = { 0 };
@@ -594,7 +598,7 @@ int main() {
 
 	bender.fov = 50.0f;
 
-	Program_State program_state = Program_State::EDITOR;
+	Program_State program_state = Program_State::GAME;
 
 	while (!quit) {
 
